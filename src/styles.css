@@ -1,0 +1,137 @@
+* { box-sizing: border-box; }
+:root {
+  --bg: #1e1e22;
+  --panel: #26262b;
+  --panel-2: #2e2e34;
+  --line: #3a3a42;
+  --text: #e7e7ea;
+  --muted: #9a9aa3;
+  --accent: #6d8bff;
+  --accent-2: #4f6ff0;
+  --danger: #ff6b6b;
+}
+html, body, #root { height: 100%; margin: 0; }
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  overflow: hidden;
+}
+button {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+button:hover { background: #35353c; }
+button.primary { background: var(--accent-2); border-color: var(--accent-2); }
+button.primary:hover { background: var(--accent); }
+button:disabled { opacity: 0.4; cursor: default; }
+input, select, textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+label { color: var(--muted); font-size: 12px; }
+
+/* ---- Editor layout ---- */
+.editor {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  grid-template-rows: 48px 1fr 150px;
+  grid-template-areas:
+    "toolbar toolbar"
+    "canvas  props"
+    "timeline props";
+  height: 100%;
+}
+.toolbar {
+  grid-area: toolbar;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.toolbar .title-input { flex: 0 1 240px; }
+.toolbar .spacer { flex: 1; }
+.toolbar .group { display: flex; gap: 6px; align-items: center; }
+.toolbar .sep { width: 1px; height: 24px; background: var(--line); margin: 0 4px; }
+
+.canvas-area { grid-area: canvas; position: relative; overflow: hidden; background: #141417; }
+.props { grid-area: props; background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; padding: 12px; }
+.timeline { grid-area: timeline; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-direction: column; }
+
+/* ---- Canvas / world ---- */
+.viewport { position: absolute; inset: 0; overflow: hidden; cursor: grab; }
+.viewport.panning { cursor: grabbing; }
+.world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.element { position: absolute; }
+.element .content { width: 100%; height: 100%; }
+.element img { width: 100%; height: 100%; display: block; pointer-events: none; }
+.element .text-box {
+  width: 100%; height: 100%; outline: none; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.element.selected { outline: 2px solid var(--accent); outline-offset: 2px; }
+.blur-hint {
+  position: absolute; top: -22px; left: 0; font-size: 11px; color: #ffcf5c;
+  background: rgba(0,0,0,0.6); padding: 1px 6px; border-radius: 4px; white-space: nowrap;
+}
+
+/* ---- Timeline ---- */
+.timeline-head { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+.timeline-strip { display: flex; gap: 8px; padding: 10px; overflow-x: auto; flex: 1; align-items: stretch; }
+.frame-card {
+  flex: 0 0 auto; width: 150px; border: 2px solid var(--line); border-radius: 8px;
+  background: var(--panel-2); overflow: hidden; cursor: pointer; display: flex; flex-direction: column;
+}
+.frame-card.current { border-color: var(--accent); }
+.frame-card.dragging { opacity: 0.5; }
+.frame-thumb { position: relative; width: 100%; height: 78px; overflow: hidden; background: #0d0d10; }
+.frame-thumb .thumb-world { position: absolute; transform-origin: 0 0; }
+.frame-meta { display: flex; align-items: center; gap: 4px; padding: 4px 6px; font-size: 12px; }
+.frame-meta .idx { color: var(--muted); }
+.frame-meta input { flex: 1; padding: 2px 4px; font-size: 12px; background: transparent; border: none; }
+.frame-card .row { display: flex; gap: 4px; padding: 0 6px 6px; }
+.frame-card .row button { padding: 2px 6px; font-size: 11px; }
+
+/* ---- Properties ---- */
+.props h3 { margin: 4px 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 10px; }
+.field.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.field input, .field select, .field textarea { width: 100%; }
+.props .hint { font-size: 11px; color: var(--muted); margin-top: -4px; }
+
+/* ---- Player / presenter ---- */
+.player { position: fixed; inset: 0; background: #000; z-index: 50; }
+.player .viewport { cursor: default; }
+.player-hud { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 60; opacity: 0.25; transition: opacity .2s; }
+.player-hud:hover { opacity: 1; }
+.progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); z-index: 60; transition: width .2s; }
+
+.presenter { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr auto; height: 100%; gap: 12px; padding: 12px; background: #0d0d10; grid-template-areas: "cur next" "notes notes"; }
+.presenter .cur { grid-area: cur; }
+.presenter .next { grid-area: next; }
+.presenter .notes { grid-area: notes; background: var(--panel); border-radius: 8px; padding: 12px; max-height: 28vh; overflow: auto; white-space: pre-wrap; }
+.presenter .stage { background: #000; border-radius: 8px; overflow: hidden; position: relative; }
+.presenter .label { position: absolute; top: 6px; left: 8px; font-size: 11px; color: var(--muted); z-index: 2; }
+.presenter .clock { grid-area: next; align-self: start; text-align: right; color: var(--muted); }
+
+/* ---- Modal / template picker ---- */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 24px; width: 640px; max-width: 92vw; }
+.modal h2 { margin-top: 0; }
+.template-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px; }
+.template-card { text-align: left; padding: 14px; border-radius: 10px; }
+.template-card b { display: block; margin-bottom: 4px; }
+.template-card span { color: var(--muted); font-size: 12px; }
+.smart-guide { position: absolute; background: var(--accent); pointer-events: none; z-index: 5; }
+.kbd { background: var(--panel-2); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px; font-size: 12px; }
