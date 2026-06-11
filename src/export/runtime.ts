@@ -56,10 +56,17 @@ export function runtimeScript(): string {
     var S=(r1-r0)/rho, ch0=Math.cosh(r0);
     return {S:Math.abs(S)||1e-6, at:function(t){var r=r0+rho*t*S; var u=(w0/(rho2*u1))*(ch0*Math.tanh(r)-Math.sinh(r0)); var w=w0*ch0/Math.cosh(r); return{cx:from.cx+dx*u,cy:from.cy+dy*u,scale:v.width/w,rotation:from.rotation+dRot*t};}};
   }
-  function bezier(p1,p2){ // cubic-bezier(p1,0,p2,1) approx for easing
-    return function(t){ return 3*(1-t)*(1-t)*t*p1 + 3*(1-t)*t*t*p2 + t*t*t; };
+  // Proper CSS cubic-bezier easing: solve x(t)=time via Newton, then return y(t).
+  // (Matches the editor's Motion easing so playback feels identical to the app.)
+  function cubicBezier(x1,y1,x2,y2){
+    var A=function(a,b){return 1-3*b+3*a;}, B=function(a,b){return 3*b-6*a;}, C=function(a){return 3*a;};
+    var calc=function(t,a,b){return ((A(a,b)*t+B(a,b))*t+C(a))*t;};
+    var slope=function(t,a,b){return 3*A(a,b)*t*t+2*B(a,b)*t+C(a);};
+    return function(x){ if(x<=0)return 0; if(x>=1)return 1; var t=x;
+      for(var i=0;i<6;i++){ var s=slope(t,x1,x2); if(s===0) break; t-=(calc(t,x1,x2)-x)/s; }
+      return calc(t,y1,y2); };
   }
-  var EASE={smooth:{e:bezier(.4,.2),k:1},snappy:{e:bezier(.2,.2),k:.6},slowDrift:{e:bezier(.33,.2),k:1.6},cut:{e:null,k:0}};
+  var EASE={smooth:{e:cubicBezier(.4,0,.2,1),k:1},snappy:{e:cubicBezier(.2,.8,.2,1),k:.6},slowDrift:{e:cubicBezier(.33,0,.2,1),k:1.6},cut:{e:null,k:0}};
 
   var curCam = frames[0]?frameToCam(frames[0],vp()):{cx:0,cy:0,scale:1,rotation:0};
   function animateTo(target, easing, duration){
