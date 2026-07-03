@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 import { Rnd } from "react-rnd";
 import { motion } from "motion/react";
+import type { TargetAndTransition } from "motion/react";
 import type { Element } from "../types";
 import { useStore } from "../store/store";
 import { computeSnap } from "../playback/snapping";
+import { STAGGER_STEP_S } from "../playback/stagger";
 
 /** Editable element wrapped in react-rnd (scale-aware drag/resize — §2.2). */
 export function EditableElement({ el, scale, selected }: { el: Element; scale: number; selected: boolean }) {
@@ -55,8 +57,18 @@ export function EditableElement({ el, scale, selected }: { el: Element; scale: n
 }
 
 /** Read-only element used in playback / presenter / thumbnails. */
-export function PlaybackElement({ el, entering, leaving }: { el: Element; entering: boolean; leaving: boolean }) {
-  const v = variantsFor(el, entering, leaving);
+export function PlaybackElement({
+  el,
+  entering,
+  leaving,
+  staggerIndex = 0,
+}: {
+  el: Element;
+  entering: boolean;
+  leaving: boolean;
+  staggerIndex?: number;
+}) {
+  const v = variantsFor(el, entering, leaving, staggerIndex);
   return (
     <motion.div
       className="element"
@@ -64,7 +76,7 @@ export function PlaybackElement({ el, entering, leaving }: { el: Element; enteri
       initial={v.initial}
       animate={v.animate}
       exit={v.exit}
-      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+      transition={v.transition}
     >
       <div className="content" style={{ transform: `rotate(${el.rotation}deg)`, width: "100%", height: "100%" }}>
         <ElementBody el={el} editable={false} />
@@ -133,7 +145,7 @@ function ElementBody({ el, editable }: { el: Element; editable: boolean }) {
   );
 }
 
-function variantsFor(el: Element, entering: boolean, leaving: boolean) {
+function variantsFor(el: Element, entering: boolean, leaving: boolean, staggerIndex: number) {
   const lc = el.lifecycle;
   const off = 80;
   const dir = lc.enterDirection ?? "left";
@@ -146,8 +158,11 @@ function variantsFor(el: Element, entering: boolean, leaving: boolean) {
           ? { x: 0, y: -off }
           : { x: 0, y: off };
 
+  const delay = entering ? staggerIndex * STAGGER_STEP_S : 0;
+
   let initial: Record<string, number> = {};
   let animate: Record<string, number | number[]> = { opacity: 1, x: 0, y: 0, scale: 1 };
+  let transition: Record<string, unknown> = { duration: 0.5, ease: [0.4, 0, 0.2, 1], delay };
 
   if (entering) {
     switch (lc.enterEffect) {
@@ -167,10 +182,12 @@ function variantsFor(el: Element, entering: boolean, leaving: boolean) {
     }
   }
 
-  let exit: Record<string, number> = { opacity: 1 };
+  // Exits keep their own timing so a staggered entrance never delays a fade-out.
+  let exit: TargetAndTransition = { opacity: 1 };
   if (leaving && lc.onExit === "leave") {
-    exit = lc.exitEffect === "slide" ? { opacity: 0, ...slideFrom } : { opacity: 0 };
+    const target = lc.exitEffect === "slide" ? { opacity: 0, ...slideFrom } : { opacity: 0 };
+    exit = { ...target, transition: { duration: 0.4, ease: "easeIn" } };
   }
 
-  return { initial, animate, exit };
+  return { initial, animate, exit, transition };
 }

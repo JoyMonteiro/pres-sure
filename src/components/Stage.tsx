@@ -3,6 +3,7 @@ import type { Camera, Size } from "../camera/camera";
 import { cameraToTransform } from "../camera/camera";
 import type { Presentation } from "../types";
 import { visibilityAt } from "../playback/visibility";
+import { enterOrder } from "../playback/stagger";
 import { PlaybackElement } from "./ElementView";
 
 /** Read-only render of the world at a given camera — used by player, presenter, thumbs. */
@@ -20,6 +21,7 @@ export function Stage({
   animate?: boolean;
 }) {
   const els = [...presentation.elements].sort((a, b) => a.z - b.z);
+  const order = enterOrder(els, presentation.frames, currentIndex);
   return (
     <div
       className="viewport"
@@ -31,7 +33,15 @@ export function Stage({
             {els.map((el) => {
               const v = visibilityAt(el, presentation.frames, currentIndex);
               if (!v.visible) return null;
-              return <PlaybackElement key={el.id} el={el} entering={v.entering} leaving={v.leaving} />;
+              return (
+                <PlaybackElement
+                  key={el.id}
+                  el={el}
+                  entering={v.entering}
+                  leaving={v.leaving}
+                  staggerIndex={order.get(el.id) ?? 0}
+                />
+              );
             })}
           </AnimatePresence>
         ) : (
