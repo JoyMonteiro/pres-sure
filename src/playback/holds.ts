@@ -87,3 +87,17 @@ export function planReveal(
   return { holds, assignments, insertAt: end + 1 };
 }
 
+/**
+ * Frames with holds resolved to real rects, forced to cut, and `kind` stripped. This is
+ * the whole of export parity: the exported runtime receives ordinary frames and needs no
+ * knowledge of holds (spec D4). Order and count are preserved, so `enterAt` indices hold.
+ */
+export function flattenFrames(frames: Frame[]): Frame[] {
+  return frames.map((f, i) => {
+    if (!isHold(f)) return f;
+    const flat: Frame = { ...f, ...resolveFrameRect(frames, i)!, easing: "cut", duration: 0 };
+    delete flat.kind; // `delete` rather than rest-destructuring: tsconfig sets noUnusedLocals
+    return flat;
+  });
+}
+

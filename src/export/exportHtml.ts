@@ -3,13 +3,16 @@
 // no network. Text uses a system-font stack for portability (font embedding is post-MVP).
 import type { Presentation } from "../types";
 import { slug, triggerDownload } from "../store/persistence";
+import { flattenFrames } from "../playback/holds";
 import { runtimeScript } from "./runtime";
 
 const SYSTEM_FONTS =
   'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
 export function buildHtml(p: Presentation): string {
-  const data = JSON.stringify(p).replace(/</g, "\\u003c");
+  // Holds are resolved here, so the runtime only ever sees ordinary frames (spec D4).
+  const flat = { ...p, frames: flattenFrames(p.frames) };
+  const data = JSON.stringify(flat).replace(/</g, "\\u003c");
   return `<!doctype html>
 <html lang="en">
 <head>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { holdGroups, isHold, planReveal, resolveFrameRect } from "./holds";
+import { flattenFrames, holdGroups, isHold, planReveal, resolveFrameRect } from "./holds";
 import type { Frame } from "../types";
 
 const shot = (id: string, x = 0, rotation = 0): Frame => ({
@@ -140,6 +140,37 @@ describe("planReveal", () => {
     expect(planReveal([shot("f1")], ["a"], "f1", stubHold)).toBeNull();
     expect(planReveal([shot("f1")], ["a", "b"], null, stubHold)).toBeNull();
     expect(planReveal([shot("f1")], ["a", "b"], "nope", stubHold)).toBeNull();
+  });
+});
+
+describe("flattenFrames", () => {
+  it("gives each hold its shot's rect", () => {
+    const flat = flattenFrames([shot("f1", 10), hold("h1")]);
+    expect(flat[1].x).toBe(10);
+    expect(flat[1].w).toBe(100);
+  });
+
+  it("strips kind so the exported runtime never sees a hold", () => {
+    const flat = flattenFrames([shot("f1"), hold("h1")]);
+    expect(flat.every((f) => f.kind === undefined)).toBe(true);
+  });
+
+  it("forces holds to cut with zero duration", () => {
+    const flat = flattenFrames([shot("f1"), hold("h1")]);
+    expect(flat[1].easing).toBe("cut");
+    expect(flat[1].duration).toBe(0);
+  });
+
+  it("leaves shots exactly as they were", () => {
+    const frames = [shot("f1", 10), hold("h1"), shot("f2", 20)];
+    const flat = flattenFrames(frames);
+    expect(flat[0]).toEqual(frames[0]);
+    expect(flat[2]).toEqual(frames[2]);
+  });
+
+  it("preserves frame count and order, so indices still line up with enterAt", () => {
+    const frames = [shot("f1"), hold("h1"), hold("h2"), shot("f2")];
+    expect(flattenFrames(frames).map((f) => f.id)).toEqual(["f1", "h1", "h2", "f2"]);
   });
 });
 
