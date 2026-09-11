@@ -7,7 +7,8 @@ import { immer } from "zustand/middleware/immer";
 import type { Camera, Size } from "../camera/camera";
 import { boundingBox, cameraToFrameRect, frameToCamera } from "../camera/camera";
 import type { Element, ElementType, Frame, Presentation } from "../types";
-import { makeElement, makeFrame, makePresentation } from "./factory";
+import { makeElement, makeFrame, makeHold, makePresentation } from "./factory";
+import { holdGroups, isHold, planReveal } from "../playback/holds";
 import { debounce, saveLocal } from "./persistence";
 
 export type Mode = "edit" | "play";
@@ -31,6 +32,8 @@ interface AppState {
   setEditorCamera: (c: Camera) => void;
   setMode: (m: Mode) => void;
   select: (ids: string[]) => void;
+  /** Add/remove one id, preserving click order — the order a build reveals in. */
+  toggleSelect: (id: string) => void;
   setCurrentFrame: (id: string | null) => void;
   setGuides: (g: Guide[]) => void;
 
@@ -51,7 +54,10 @@ interface AppState {
   recaptureFrame: (id: string) => void;
   duplicateFrame: (id: string) => void;
   removeFrame: (id: string) => void;
-  reorderFrames: (from: number, to: number) => void;
+  /** Reorder whole groups (a shot plus its holds), by group index — not flat frame index. */
+  moveFrameGroup: (from: number, to: number) => void;
+  addHoldStep: (shotId: string) => void;
+  revealOneAtATime: () => void;
 }
 
 const touch = (p: Presentation) => {
@@ -76,6 +82,12 @@ export const useStore = create<AppState>()(
       setEditorCamera: (c) => set((st) => void (st.editorCamera = c)),
       setMode: (m) => set((st) => void (st.mode = m)),
       select: (ids) => set((st) => void (st.selectedIds = ids)),
+      toggleSelect: (id) =>
+        set((st) => {
+          const i = st.selectedIds.indexOf(id);
+          if (i >= 0) st.selectedIds.splice(i, 1);
+          else st.selectedIds.push(id); // append: selection order is the reveal order
+        }),
       setCurrentFrame: (id) => set((st) => void (st.currentFrameId = id)),
 
       loadPresentation: (p) =>
@@ -217,21 +229,86 @@ export const useStore = create<AppState>()(
           touch(st.presentation);
         }),
 
+      addHoldStep: (shotId) =>
+        set((st) => {
+          const frames = st.presentation.frames;
+          const idx = frames.findIndex((f) => f.id === shotId);
+          if (idx < 0) return;
+          let end = idx;
+          while (end + 1 < frames.length && isHold(frames[end + 1])) end++;
+          const stepNo = end - idx + 2; // existing holds + the shot itself + 1
+          const h = makeHold({ title: `Step ${stepNo}` });
+          frames.splice(end + 1, 0, h);
+          st.currentFrameId = h.id;
+          touch(st.presentation);
+        }),
+
+      revealOneAtATime: () => {
+        const st = get();
+        const plan = planReveal(st.presentation.frames, st.selectedIds, st.currentFrameId, (title) =>
+          makeHold({ title })
+        );
+        if (!plan) return;
+        // One set() so the whole build is a single undo entry.
+        set((s) => {
+          s.presentation.frames.splice(plan.insertAt, 0, ...plan.holds);
+          plan.assignments.forEach((frameId, elId) => {
+            const el = s.presentation.elements.find((e) => e.id === elId);
+            if (!el) return;
+            el.lifecycle.enterAt = frameId;
+            // Upgrade only from "none": an entrance the author chose is never overwritten.
+            // Without an effect the reveal is a hard pop, since `entering` needs enterAt.
+            if (el.lifecycle.enterEffect === "none") el.lifecycle.enterEffect = "fade";
+          });
+          touch(s.presentation);
+        });
+      },
+
       removeFrame: (id) =>
         set((st) => {
-          st.presentation.frames = st.presentation.frames.filter((f) => f.id !== id);
-          if (st.currentFrameId === id) {
+          const frames = st.presentation.frames;
+          const idx = frames.findIndex((f) => f.id === id);
+          if (idx < 0) return;
+
+          // Deleting a shot takes its holds with it — a surviving hold would inherit some
+          // unrelated shot's camera.
+          const doomed = [frames[idx].id];
+          if (!isHold(frames[idx])) {
+            for (let j = idx + 1; j < frames.length && isHold(frames[j]); j++) doomed.push(frames[j].id);
+          }
+
+          // Elements pointed at a deleted *hold* fall back to the preceding frame, so the
+          // build loses a step instead of collapsing. Deleting a shot keeps today's
+          // dangling-enterAt behaviour: that wart is explicitly out of scope (spec §9).
+          const holdIds = doomed.filter((d) => isHold(frames.find((f) => f.id === d)!));
+          const fallback = frames[idx - 1]?.id ?? null;
+          if (holdIds.length) {
+            st.presentation.elements.forEach((el) => {
+              if (el.lifecycle.enterAt && holdIds.includes(el.lifecycle.enterAt)) {
+                el.lifecycle.enterAt = fallback;
+              }
+              if (el.lifecycle.exitAt && holdIds.includes(el.lifecycle.exitAt)) {
+                el.lifecycle.exitAt = fallback;
+              }
+            });
+          }
+
+          st.presentation.frames = frames.filter((f) => !doomed.includes(f.id));
+          if (st.currentFrameId && doomed.includes(st.currentFrameId)) {
             st.currentFrameId = st.presentation.frames[0]?.id ?? null;
           }
           touch(st.presentation);
         }),
 
-      reorderFrames: (from, to) =>
+      moveFrameGroup: (from, to) =>
         set((st) => {
-          const fr = st.presentation.frames;
-          if (from < 0 || from >= fr.length || to < 0 || to >= fr.length) return;
-          const [m] = fr.splice(from, 1);
-          fr.splice(to, 0, m);
+          const groups = holdGroups(st.presentation.frames);
+          if (from < 0 || from >= groups.length || to < 0 || to >= groups.length) return;
+          const [m] = groups.splice(from, 1);
+          groups.splice(to, 0, m);
+          // Rebuilding from groups is what keeps holds behind their shot: there is no
+          // ordering a drag can produce that separates them.
+          st.presentation.frames = groups.flatMap((g) => [g.shot, ...g.holds]);
           touch(st.presentation);
         }),
     })),
