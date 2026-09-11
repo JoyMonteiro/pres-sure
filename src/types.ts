@@ -49,6 +49,9 @@ export interface Element {
 /** Named transition "feels" — map to a curve or a spring (§4.4). */
 export type EasingPreset = "smooth" | "snappy" | "slowDrift" | "cut";
 
+/** "shot" carries its own camera; "hold" borrows the preceding shot's (see spec D3). */
+export type FrameKind = "shot" | "hold";
+
 export interface Frame {
   id: string;
   title: string;
@@ -62,6 +65,12 @@ export interface Frame {
   duration: number | "auto";
   easing: EasingPreset;
   notes: string;
+  /**
+   * A "hold" is a reveal step: it has no camera of its own and resolves to the nearest
+   * preceding shot. Absent means "shot" — never write "shot" into stored data, so old
+   * saves stay loadable without migration.
+   */
+  kind?: FrameKind;
 }
 
 export interface WorldSettings {

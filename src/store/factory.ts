@@ -48,6 +48,20 @@ export function makeFrame(partial: Partial<Frame> & Pick<Frame, "x" | "y" | "w" 
   };
 }
 
+/**
+ * A reveal step. Geometry is a placeholder — `resolveFrameRect` supplies the real rect —
+ * but w/h stay non-zero so nothing that divides by them can produce Infinity.
+ */
+export function makeHold(partial: Partial<Frame> = {}): Frame {
+  return {
+    ...makeFrame({ x: 0, y: 0, w: 1, h: 1, title: "Step", ...partial }),
+    kind: "hold",
+    easing: "cut",
+    duration: 0,
+  };
+}
+
+
 export function makePresentation(title = "Untitled presentation"): Presentation {
   const now = Date.now();
   return {
