@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { holdGroups, isHold, resolveFrameRect } from "./holds";
+import { holdGroups, isHold, planReveal, resolveFrameRect } from "./holds";
 import type { Frame } from "../types";
 
 const shot = (id: string, x = 0, rotation = 0): Frame => ({
@@ -85,3 +85,61 @@ describe("holdGroups", () => {
     expect(groups.flatMap((g) => [g.shot.id, ...g.holds.map((h) => h.id)])).toEqual(["h1", "f1"]);
   });
 });
+
+// Deterministic stand-in for makeHold — keeps the test free of random ids.
+let holdSeq = 0;
+const stubHold = (title: string): Frame => ({ ...hold(`stub${++holdSeq}`), title });
+
+describe("planReveal", () => {
+  it("gives the first element the anchor frame and each other its own hold", () => {
+    holdSeq = 0;
+    const frames = [shot("f1"), shot("f2")];
+    const plan = planReveal(frames, ["a", "b", "c"], "f1", stubHold)!;
+
+    expect(plan.holds).toHaveLength(2);
+    expect(plan.assignments.get("a")).toBe("f1");
+    expect(plan.assignments.get("b")).toBe(plan.holds[0].id);
+    expect(plan.assignments.get("c")).toBe(plan.holds[1].id);
+  });
+
+  it("preserves click order rather than sorting", () => {
+    holdSeq = 0;
+    const frames = [shot("f1")];
+    const plan = planReveal(frames, ["c", "a", "b"], "f1", stubHold)!;
+    expect(plan.assignments.get("c")).toBe("f1");
+    expect(plan.assignments.get("a")).toBe(plan.holds[0].id);
+  });
+
+  it("titles the new steps from 2 upward", () => {
+    holdSeq = 0;
+    const plan = planReveal([shot("f1")], ["a", "b", "c"], "f1", stubHold)!;
+    expect(plan.holds.map((h) => h.title)).toEqual(["Step 2", "Step 3"]);
+  });
+
+  it("inserts directly after the anchor shot when it has no holds yet", () => {
+    holdSeq = 0;
+    const frames = [shot("f1"), shot("f2")];
+    expect(planReveal(frames, ["a", "b"], "f1", stubHold)!.insertAt).toBe(1);
+  });
+
+  it("inserts after the anchor's existing holds, not between them", () => {
+    holdSeq = 0;
+    const frames = [shot("f1"), hold("h1"), hold("h2"), shot("f2")];
+    expect(planReveal(frames, ["a", "b"], "f1", stubHold)!.insertAt).toBe(3);
+  });
+
+  it("accepts a hold as the anchor and still appends to the end of its group", () => {
+    holdSeq = 0;
+    const frames = [shot("f1"), hold("h1"), hold("h2"), shot("f2")];
+    const plan = planReveal(frames, ["a", "b"], "h1", stubHold)!;
+    expect(plan.insertAt).toBe(3);
+    expect(plan.assignments.get("a")).toBe("h1");
+  });
+
+  it("returns null when there is nothing to build", () => {
+    expect(planReveal([shot("f1")], ["a"], "f1", stubHold)).toBeNull();
+    expect(planReveal([shot("f1")], ["a", "b"], null, stubHold)).toBeNull();
+    expect(planReveal([shot("f1")], ["a", "b"], "nope", stubHold)).toBeNull();
+  });
+});
+

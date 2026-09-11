@@ -46,3 +46,44 @@ export function holdGroups(frames: Frame[]): HoldGroup[] {
   });
   return groups;
 }
+
+export interface RevealPlan {
+  /** Holds to insert, in order, at `insertAt`. */
+  holds: Frame[];
+  /** element id -> the frame id its `lifecycle.enterAt` should point at. */
+  assignments: Map<string, string>;
+  /** Flat index at which `holds` are spliced in. */
+  insertAt: number;
+}
+
+/**
+ * Turn an ordered selection into a build. The anchor is whatever frame `currentFrameId`
+ * names — shot or hold — and the first element is assigned to it, so N elements cost N-1
+ * new steps. New holds land at the end of the anchor's group so a second build appends to
+ * the first rather than interleaving with it.
+ *
+ * `makeHoldFrame` is injected to keep this function pure (see the module header).
+ */
+export function planReveal(
+  frames: Frame[],
+  elementIds: string[],
+  currentFrameId: string | null,
+  makeHoldFrame: (title: string) => Frame
+): RevealPlan | null {
+  if (elementIds.length < 2 || !currentFrameId) return null;
+  const anchorIdx = frames.findIndex((f) => f.id === currentFrameId);
+  if (anchorIdx < 0) return null;
+
+  let end = anchorIdx;
+  while (end + 1 < frames.length && isHold(frames[end + 1])) end++;
+
+  const rest = elementIds.slice(1);
+  const holds = rest.map((_, k) => makeHoldFrame(`Step ${k + 2}`));
+
+  const assignments = new Map<string, string>();
+  assignments.set(elementIds[0], currentFrameId);
+  rest.forEach((id, k) => assignments.set(id, holds[k].id));
+
+  return { holds, assignments, insertAt: end + 1 };
+}
+
