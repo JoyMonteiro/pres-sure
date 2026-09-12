@@ -1,6 +1,7 @@
 import { useStore } from "../store/store";
 import { EASING_PRESETS } from "../camera/easing";
-import type { EnterEffect, ExitEffect, SlideDirection } from "../types";
+import { holdGroups, isHold } from "../playback/holds";
+import type { Element, EnterEffect, ExitEffect, SlideDirection } from "../types";
 
 const num = (v: string, fb = 0) => (v === "" || isNaN(+v) ? fb : +v);
 
@@ -16,7 +17,13 @@ export function PropertiesPanel() {
 
   return (
     <div className="props">
-      {sel ? <ElementProps id={sel.id} /> : <FrameProps id={currentFrameId} />}
+      {sel ? (
+        <ElementProps id={sel.id} />
+      ) : selectedIds.length > 1 ? (
+        <MultiElementProps />
+      ) : (
+        <FrameProps id={currentFrameId} />
+      )}
       <hr style={{ border: 0, borderTop: "1px solid var(--line)", margin: "14px 0" }} />
       <h3>World</h3>
       <div className="field">
@@ -198,9 +205,32 @@ function ElementProps({ id }: { id: string }) {
 
 function FrameProps({ id }: { id: string | null }) {
   const frame = useStore((s) => s.presentation.frames.find((f) => f.id === id));
+  const frames = useStore((s) => s.presentation.frames);
   const update = useStore((s) => s.updateFrame);
   const recapture = useStore((s) => s.recaptureFrame);
   if (!frame) return <h3>No frame selected</h3>;
+  if (isHold(frame)) {
+    // A hold has no camera move, so transition feel, duration and re-capture are all
+    // meaningless for it — only its title and notes are editable.
+    const group = holdGroups(frames).find((g) => g.holds.some((h) => h.id === frame.id));
+    return (
+      <>
+        <h3>Reveal step</h3>
+        <div className="field">
+          <label>Title</label>
+          <input value={frame.title} onChange={(e) => update(frame.id, { title: e.target.value })} />
+        </div>
+        <div className="field">
+          <label>Speaker notes</label>
+          <textarea rows={5} value={frame.notes} onChange={(e) => update(frame.id, { notes: e.target.value })} />
+        </div>
+        <p className="hint">
+          Camera inherited from “{group?.shot.title ?? "the preceding frame"}”. Advancing to this
+          step reveals its elements without moving the camera.
+        </p>
+      </>
+    );
+  }
   const isSpring = frame.easing === "snappy";
 
   return (
@@ -255,4 +285,47 @@ function FrameProps({ id }: { id: string | null }) {
       </button>
     </>
   );
+}
+
+/** Shown for a 2+ element selection: the reveal builder (spec §5). */
+function MultiElementProps() {
+  const selectedIds = useStore((s) => s.selectedIds);
+  const elements = useStore((s) => s.presentation.elements);
+  const currentFrameId = useStore((s) => s.currentFrameId);
+  const frames = useStore((s) => s.presentation.frames);
+  const reveal = useStore((s) => s.revealOneAtATime);
+
+  const chosen = selectedIds
+    .map((id) => elements.find((e) => e.id === id))
+    .filter((e): e is Element => !!e);
+  const anchor = frames.find((f) => f.id === currentFrameId);
+
+  return (
+    <>
+      <h3>{chosen.length} elements selected</h3>
+      <ol className="sel-list">
+        {chosen.map((e, i) => (
+          <li key={e.id}>
+            <span className="idx">{i + 1}</span> {elementLabel(e)}
+          </li>
+        ))}
+      </ol>
+      <button style={{ width: "100%" }} disabled={!anchor} onClick={() => reveal()}>
+        Reveal one at a time
+      </button>
+      <p className="hint">
+        {anchor
+          ? `Element 1 appears with “${anchor.title}”; each of the others gets its own step. Existing entrance frames are overwritten.`
+          : "Select a frame in the timeline first."}
+      </p>
+    </>
+  );
+}
+
+/** Short human label for the selection list — text content, or just the type. */
+function elementLabel(e: Element): string {
+  if (e.type !== "text") return e.type;
+  const plain = e.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  if (!plain) return "text";
+  return plain.length > 28 ? `${plain.slice(0, 28)}…` : plain;
 }

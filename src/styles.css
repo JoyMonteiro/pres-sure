@@ -115,6 +115,13 @@ label { color: var(--muted); font-size: 12px; }
 .field.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .field input, .field select, .field textarea { width: 100%; }
 .props .hint { font-size: 11px; color: var(--muted); margin-top: -4px; }
+.sel-list { list-style: none; margin: 0 0 10px; padding: 0; font-size: 12px; }
+.sel-list li { display: flex; gap: 6px; align-items: center; padding: 2px 0; color: var(--text); }
+.sel-list .idx {
+  flex: 0 0 auto; min-width: 16px; height: 16px; border-radius: 8px;
+  background: var(--accent); color: #fff; font-size: 10px; font-weight: 700;
+  display: grid; place-items: center;
+}
 
 /* ---- Player / presenter ---- */
 .player { position: fixed; inset: 0; background: #000; z-index: 50; }
