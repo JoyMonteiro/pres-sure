@@ -1,0 +1,481 @@
+{
+  "id": "pres_hold_demo",
+  "title": "Hold frames test deck",
+  "createdAt": 1786147200000,
+  "updatedAt": 1786147200000,
+  "world": {
+    "backgroundColor": "#f4f4f5"
+  },
+  "elements": [
+    {
+      "id": "el_a_head",
+      "type": "text",
+      "x": 0,
+      "y": -260,
+      "w": 860,
+      "h": 123,
+      "rotation": 0,
+      "z": 0,
+      "content": "Four bullets, one at a time",
+      "textStyle": {
+        "fontSize": 56,
+        "fontWeight": 700,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": null,
+        "enterEffect": "none",
+        "onExit": "persist"
+      }
+    },
+    {
+      "id": "el_a_1",
+      "type": "text",
+      "x": 40,
+      "y": 0,
+      "w": 860,
+      "h": 97,
+      "rotation": 0,
+      "z": 0,
+      "content": "1. Present from the shot itself",
+      "textStyle": {
+        "fontSize": 44,
+        "fontWeight": 600,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": "fr_a",
+        "enterEffect": "fade",
+        "onExit": "persist"
+      }
+    },
+    {
+      "id": "el_a_2",
+      "type": "text",
+      "x": 40,
+      "y": 130,
+      "w": 860,
+      "h": 97,
+      "rotation": 0,
+      "z": 0,
+      "content": "2. Revealed by step 2",
+      "textStyle": {
+        "fontSize": 44,
+        "fontWeight": 600,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": "fr_a_h1",
+        "enterEffect": "fade",
+        "onExit": "persist"
+      }
+    },
+    {
+      "id": "el_a_3",
+      "type": "text",
+      "x": 40,
+      "y": 260,
+      "w": 860,
+      "h": 97,
+      "rotation": 0,
+      "z": 0,
+      "content": "3. Revealed by step 3",
+      "textStyle": {
+        "fontSize": 44,
+        "fontWeight": 600,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": "fr_a_h2",
+        "enterEffect": "fade",
+        "onExit": "persist"
+      }
+    },
+    {
+      "id": "el_a_4",
+      "type": "text",
+      "x": 40,
+      "y": 390,
+      "w": 860,
+      "h": 97,
+      "rotation": 0,
+      "z": 0,
+      "content": "4. Revealed by step 4",
+      "textStyle": {
+        "fontSize": 44,
+        "fontWeight": 600,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": "fr_a_h3",
+        "enterEffect": "fade",
+        "onExit": "persist"
+      }
+    },
+    {
+      "id": "el_b_head",
+      "type": "text",
+      "x": 3000,
+      "y": -260,
+      "w": 860,
+      "h": 123,
+      "rotation": 0,
+      "z": 0,
+      "content": "Entrances other than fade",
+      "textStyle": {
+        "fontSize": 56,
+        "fontWeight": 700,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": null,
+        "enterEffect": "none",
+        "onExit": "persist"
+      }
+    },
+    {
+      "id": "el_b_1",
+      "type": "text",
+      "x": 3040,
+      "y": 0,
+      "w": 860,
+      "h": 97,
+      "rotation": 0,
+      "z": 0,
+      "content": "Slides in from the left",
+      "textStyle": {
+        "fontSize": 44,
+        "fontWeight": 600,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": "fr_b",
+        "enterEffect": "slide",
+        "onExit": "persist",
+        "enterDirection": "left"
+      }
+    },
+    {
+      "id": "el_b_2",
+      "type": "text",
+      "x": 3040,
+      "y": 130,
+      "w": 860,
+      "h": 97,
+      "rotation": 0,
+      "z": 0,
+      "content": "Slides in from the right",
+      "textStyle": {
+        "fontSize": 44,
+        "fontWeight": 600,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": "fr_b_h1",
+        "enterEffect": "slide",
+        "onExit": "persist",
+        "enterDirection": "right"
+      }
+    },
+    {
+      "id": "el_b_3",
+      "type": "text",
+      "x": 3040,
+      "y": 260,
+      "w": 860,
+      "h": 97,
+      "rotation": 0,
+      "z": 0,
+      "content": "Pulses into place",
+      "textStyle": {
+        "fontSize": 44,
+        "fontWeight": 600,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": "fr_b_h2",
+        "enterEffect": "pulse",
+        "onExit": "persist"
+      }
+    },
+    {
+      "id": "el_c_head",
+      "type": "text",
+      "x": 0,
+      "y": 1740,
+      "w": 860,
+      "h": 123,
+      "rotation": 0,
+      "z": 0,
+      "content": "Leaving mid-build",
+      "textStyle": {
+        "fontSize": 56,
+        "fontWeight": 700,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": null,
+        "enterEffect": "none",
+        "onExit": "persist"
+      }
+    },
+    {
+      "id": "el_c_leaves",
+      "type": "text",
+      "x": 40,
+      "y": 2000,
+      "w": 860,
+      "h": 97,
+      "rotation": 0,
+      "z": 0,
+      "content": "This line leaves after step 2",
+      "textStyle": {
+        "fontSize": 44,
+        "fontWeight": 600,
+        "color": "#b91c1c",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": "fr_c",
+        "enterEffect": "fade",
+        "onExit": "leave",
+        "exitAt": "fr_c_h1",
+        "exitEffect": "fade"
+      }
+    },
+    {
+      "id": "el_c_replaces",
+      "type": "text",
+      "x": 40,
+      "y": 2130,
+      "w": 860,
+      "h": 97,
+      "rotation": 0,
+      "z": 0,
+      "content": "…and this one takes its place",
+      "textStyle": {
+        "fontSize": 44,
+        "fontWeight": 600,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": "fr_c_h2",
+        "enterEffect": "fade",
+        "onExit": "persist"
+      }
+    },
+    {
+      "id": "el_d_head",
+      "type": "text",
+      "x": 3000,
+      "y": 1740,
+      "w": 860,
+      "h": 123,
+      "rotation": 0,
+      "z": 0,
+      "content": "Rotated shot",
+      "textStyle": {
+        "fontSize": 56,
+        "fontWeight": 700,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": null,
+        "enterEffect": "none",
+        "onExit": "persist"
+      }
+    },
+    {
+      "id": "el_d_1",
+      "type": "text",
+      "x": 3040,
+      "y": 2000,
+      "w": 860,
+      "h": 97,
+      "rotation": 0,
+      "z": 0,
+      "content": "The hold keeps this 12° tilt",
+      "textStyle": {
+        "fontSize": 44,
+        "fontWeight": 600,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": "fr_d_h1",
+        "enterEffect": "fade",
+        "onExit": "persist"
+      }
+    }
+  ],
+  "frames": [
+    {
+      "id": "fr_a",
+      "title": "Bullets",
+      "x": -80,
+      "y": -340,
+      "w": 1100,
+      "h": 940,
+      "rotation": 0,
+      "duration": "auto",
+      "easing": "smooth",
+      "notes": "Step 3 items 4-6. Only bullet 1 is visible on arrival. Press → three times: each bullet fades in with NO camera movement, and the progress bar advances on every press. Then press ← back through it — bullets disappear in reverse."
+    },
+    {
+      "id": "fr_a_h1",
+      "title": "Step 2",
+      "x": 0,
+      "y": 0,
+      "w": 1,
+      "h": 1,
+      "rotation": 0,
+      "duration": 0,
+      "easing": "cut",
+      "notes": "Camera must be identical to “Bullets”. Bullet 2 fades in.",
+      "kind": "hold"
+    },
+    {
+      "id": "fr_a_h2",
+      "title": "Step 3",
+      "x": 0,
+      "y": 0,
+      "w": 1,
+      "h": 1,
+      "rotation": 0,
+      "duration": 0,
+      "easing": "cut",
+      "notes": "Bullet 3 fades in.",
+      "kind": "hold"
+    },
+    {
+      "id": "fr_a_h3",
+      "title": "Step 4",
+      "x": 0,
+      "y": 0,
+      "w": 1,
+      "h": 1,
+      "rotation": 0,
+      "duration": 0,
+      "easing": "cut",
+      "notes": "Bullet 4 fades in. Now press O for overview and resume — the build state must be preserved (item 7).",
+      "kind": "hold"
+    },
+    {
+      "id": "fr_b",
+      "title": "Entrances",
+      "x": 2920,
+      "y": -340,
+      "w": 1100,
+      "h": 940,
+      "rotation": 0,
+      "duration": "auto",
+      "easing": "smooth",
+      "notes": "A real camera move from the previous group — holds are instant, shots are not. Panel 1 slides in on arrival."
+    },
+    {
+      "id": "fr_b_h1",
+      "title": "Step 2",
+      "x": 0,
+      "y": 0,
+      "w": 1,
+      "h": 1,
+      "rotation": 0,
+      "duration": 0,
+      "easing": "cut",
+      "notes": "Panel 2 slides in from the right, camera still.",
+      "kind": "hold"
+    },
+    {
+      "id": "fr_b_h2",
+      "title": "Step 3",
+      "x": 0,
+      "y": 0,
+      "w": 1,
+      "h": 1,
+      "rotation": 0,
+      "duration": 0,
+      "easing": "cut",
+      "notes": "Panel 3 pulses in, camera still.",
+      "kind": "hold"
+    },
+    {
+      "id": "fr_c",
+      "title": "Leaving",
+      "x": -80,
+      "y": 1660,
+      "w": 1100,
+      "h": 700,
+      "rotation": 0,
+      "duration": "auto",
+      "easing": "smooth",
+      "notes": "The red line enters here and is marked onExit:leave with exitAt on step 2."
+    },
+    {
+      "id": "fr_c_h1",
+      "title": "Step 2",
+      "x": 0,
+      "y": 0,
+      "w": 1,
+      "h": 1,
+      "rotation": 0,
+      "duration": 0,
+      "easing": "cut",
+      "notes": "Last frame the red line is visible — it exits as you leave this step.",
+      "kind": "hold"
+    },
+    {
+      "id": "fr_c_h2",
+      "title": "Step 3",
+      "x": 0,
+      "y": 0,
+      "w": 1,
+      "h": 1,
+      "rotation": 0,
+      "duration": 0,
+      "easing": "cut",
+      "notes": "Red line gone, replacement faded in. Press ← twice: the red line must come back.",
+      "kind": "hold"
+    },
+    {
+      "id": "fr_d",
+      "title": "Rotated",
+      "x": 2920,
+      "y": 1660,
+      "w": 1100,
+      "h": 700,
+      "rotation": 12,
+      "duration": "auto",
+      "easing": "smooth",
+      "notes": "A 12° shot. Its step must stay at the same tilt — a hold inherits rotation, not just position."
+    },
+    {
+      "id": "fr_d_h1",
+      "title": "Step 2",
+      "x": 0,
+      "y": 0,
+      "w": 1,
+      "h": 1,
+      "rotation": 0,
+      "duration": 0,
+      "easing": "cut",
+      "notes": "Still tilted 12°, camera unmoved.",
+      "kind": "hold"
+    }
+  ],
+  "settings": {
+    "defaultEasing": "smooth",
+    "defaultDuration": "auto"
+  }
+}
