@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Camera, Size } from "../camera/camera";
 import { frameToCamera } from "../camera/camera";
+import { resolveFrameRect } from "../playback/holds";
 import { animateCamera } from "../playback/engine";
 import { worldBounds } from "../playback/engine";
 import { prefersReducedMotion } from "../playback/useCameraTo";
@@ -26,7 +27,9 @@ export function Player() {
 
   const [index, setIndex] = useState(0);
   const [overview, setOverview] = useState(false);
-  const camRef = useRef<Camera>(frames[0] ? frameToCamera(frames[0], viewport) : { cx: 0, cy: 0, scale: 1, rotation: 0 });
+  const camRef = useRef<Camera>(
+    frames[0] ? frameToCamera(resolveFrameRect(frames, 0)!, viewport) : { cx: 0, cy: 0, scale: 1, rotation: 0 }
+  );
   const [cam, setCam] = useState<Camera>(camRef.current);
   const animRef = useRef<{ stop: () => void } | null>(null);
   const channel = useRef<BroadcastChannel | null>(null);
@@ -60,11 +63,14 @@ export function Player() {
     (i: number) => {
       const clamped = Math.max(0, Math.min(frames.length - 1, i));
       const f = frames[clamped];
-      if (!f) return;
+      const rect = resolveFrameRect(frames, clamped);
+      if (!f || !rect) return;
       setOverview(false);
       setIndex(clamped);
       broadcast(clamped, false);
-      moveTo(frameToCamera(f, viewport), f.easing, f.duration);
+      // A hold resolves to its shot's rect and is always "cut", so advancing into one is
+      // instant and motionless — only the entering element animates.
+      moveTo(frameToCamera(rect, viewport), f.easing, f.duration);
     },
     [frames, viewport, moveTo, broadcast]
   );
@@ -82,7 +88,7 @@ export function Player() {
 
   // Initial landing.
   useEffect(() => {
-    if (frames[0]) apply(frameToCamera(frames[0], viewport));
+    if (frames[0]) apply(frameToCamera(resolveFrameRect(frames, 0)!, viewport));
     broadcast(0, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
