@@ -188,8 +188,10 @@ explicit, so this is intended.
   Advancing into a hold is instant with zero camera motion; the entering element plays its
   Motion entrance. Stepping backwards stays symmetric because `visibilityAt` depends only
   on the index. The overview beat is unchanged.
-- `PresenterView.tsx` needs no change: its next-up pane already renders `Stage` at
-  `index + 1`, which for a hold shows the same camera with the next reveal visible.
+- `PresenterView.tsx` routes its next-up pane through `resolveFrameRect` too. Element
+  visibility there is already index-driven and correct, but the pane's camera is passed in
+  from outside `Stage`, so a hold would otherwise fit its placeholder 1×1 rect and render
+  at ~360× zoom instead of its shot's camera.
 - `exportHtml.ts` serializes `{ ...p, frames: flattenFrames(p.frames) }` instead of `p`.
 
 ## 6. Data flow

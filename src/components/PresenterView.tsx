@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Size } from "../camera/camera";
 import { frameToCamera } from "../camera/camera";
 import { loadLocal } from "../store/persistence";
+import { resolveFrameRect } from "../playback/holds";
 import { openChannel, type PlaybackMsg } from "../playback/sync";
 import type { Presentation } from "../types";
 import { Stage } from "./Stage";
@@ -68,9 +69,14 @@ function PreviewPane({ pres, index }: { pres: Presentation; index: number }) {
     return () => ro.disconnect();
   }, []);
   const frame = pres.frames[index];
+  // A hold stores a placeholder rect, so the camera must be resolved from its shot —
+  // element visibility is index-driven and already correct.
+  const rect = resolveFrameRect(pres.frames, index);
   return (
     <div ref={ref} style={{ position: "absolute", inset: 0 }}>
-      {frame && <Stage presentation={pres} camera={frameToCamera(frame, size)} viewport={size} currentIndex={index} animate={false} />}
+      {frame && rect && (
+        <Stage presentation={pres} camera={frameToCamera(rect, size)} viewport={size} currentIndex={index} animate={false} />
+      )}
     </div>
   );
 }

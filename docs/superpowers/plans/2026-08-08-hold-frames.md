@@ -1203,10 +1203,25 @@ git commit -m "feat: render hold steps as timeline ticks with group drag"
 
 **Files:**
 - Modify: `src/components/Player.tsx:29,59-70,84-88`
+- Already modified ahead of this task: `src/components/PresenterView.tsx` (see Step 0)
 
 **Interfaces:**
 - Consumes: `resolveFrameRect` (Task 1).
 - Produces: nothing.
+
+- [ ] **Step 0: Confirm the presenter view is already resolved**
+
+An earlier spec revision claimed `PresenterView.tsx` needed no change. That was wrong —
+its next-up pane builds its camera outside `Stage`, so a hold fit its placeholder 1×1 rect
+and rendered at ~360x zoom. The fix is already applied; verify it rather than reapplying:
+
+```bash
+grep -n "resolveFrameRect" src/components/PresenterView.tsx
+```
+
+Expected: an import and a `const rect = resolveFrameRect(pres.frames, index);` feeding
+`frameToCamera(rect, size)` in `PreviewPane`. If either is missing, apply it before
+continuing.
 
 - [ ] **Step 1: Route the player's camera through the resolver**
 
@@ -1281,6 +1296,8 @@ Run: `npm run dev`
 8. Return to the editor, pan/zoom somewhere new, select the shot's card and press **Re-capture from current view** — replay and confirm the whole build now happens at the new camera position. This is the live-link guarantee (spec D2).
 9. Export to HTML, open the file, and step through the build. It must behave identically and the browser console must be clean.
 10. Reload the editor — autosave must restore the build intact.
+11. Open the presenter view and step through the build: the next-up pane must stay on the
+    shot's camera across every hold, never jumping to an extreme zoom.
 
 - [ ] **Step 4: Commit**
 
