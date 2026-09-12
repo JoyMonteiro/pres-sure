@@ -62,7 +62,7 @@ it restores automatically — the start dialog only appears when there's nothing
 - **Zoom:** mouse wheel / trackpad scroll. Zoom centers on the cursor.
 - **Pan:** click-and-drag on empty canvas.
 - Zoom range is large but finite; raster images blur once enlarged past their native
-  resolution (SVGs and text stay crisp at any zoom — see §7).
+  resolution (SVGs and text stay crisp at any zoom — see §12).
 
 ### Adding content
 From the toolbar:
@@ -72,6 +72,9 @@ From the toolbar:
 
 ### Selecting & arranging
 - **Click** an element to select it (it shows a blue outline and resize handles).
+- **<kbd>Shift</kbd>- or <kbd>⌘/Ctrl</kbd>-click** to add elements to the selection, or to
+  drop one out of it. Selected elements are badged 1, 2, 3… in the order you clicked them —
+  that order is what a reveal build uses (§6).
 - **Drag** to move; drag a corner/edge **handle** to resize.
 - **Smart guides:** as you drag near another element's edges or centers, alignment lines
   appear and the element **snaps** into line when you release.
@@ -98,9 +101,11 @@ Two ways to create a frame (both in the Timeline header):
 
 Working with frames in the **Timeline**:
 - **Click** a frame to glide the editor camera to it (a preview of the real transition).
-- **Drag** frames to **reorder** them — sequence is everything in storytelling.
+- **Drag** frames to **reorder** them — sequence is everything in storytelling. A frame
+  carries its reveal steps with it (§6).
 - **Title** field — rename inline.
-- **Dup** — duplicate a frame; **Del** — delete it.
+- **Dup** — duplicate a frame; **Del** — delete it, along with its reveal steps.
+- **+ Step** — add a reveal step that keeps this frame's camera (§6).
 - **Re-capture from current view** (Properties) — update a frame to match where you are now.
 
 Frames can be rotated (the camera rectangle carries rotation), so you can build tilted or
@@ -130,13 +135,76 @@ streaking sideways. This is what makes large jumps feel intentional.
 
 ---
 
-## 6. Element entrance & exit
+## 6. Reveals — showing things one at a time
+
+Bullets that appear one by one, an image sequence, a diagram built up in layers: all of
+these are **reveal steps**. A step is a frame with no camera of its own — it borrows the
+preceding shot's. Advancing onto a step doesn't move the camera at all; it just brings in
+whatever elements are set to enter there.
+
+In the timeline a step is a thin tick attached to the right of its shot's card, numbered
+from 2 (the shot itself is step 1 of its own group).
+
+> Steps are why the distinction between *where the camera is* and *what is on screen*
+> matters. A frame answers "where do we look"; a step answers "what has appeared yet".
+
+### The fast route: Reveal one at a time
+
+1. **Click the frame** the build should happen at, so it is the current frame. (If you skip
+   this, the button is disabled and the panel says *Select a frame in the timeline first*.)
+2. **Click the first element**, then <kbd>Shift</kbd>-click — or <kbd>⌘/Ctrl</kbd>-click —
+   each of the others **in the order you want them to appear**. Numbered badges appear on
+   the elements showing the order you've chosen.
+3. The Properties panel switches to a numbered list with **Reveal one at a time**. Click it.
+
+Element 1 appears with the frame itself, and every other element gets its own step — so four
+bullets cost three new steps, not four. Any element still set to entrance effect `none` is
+upgraded to `fade` so the reveal is actually visible; an effect you chose yourself is never
+overwritten.
+
+Two things worth knowing:
+
+- The badge order is **click order**, not top-to-bottom order. Shift-click an element again
+  to remove it from the selection; the rest renumber.
+- The action **overwrites existing entrance frames** for the elements you selected. The
+  panel hint says so before you press it.
+
+Running it a second time on the same shot *appends* to the existing build rather than
+interleaving with it, and step numbering continues from where the group left off.
+
+### The manual route: + Step
+
+Click **+ Step** on a frame card as many times as you need, then select an element and set
+**Enters at** (§7) to that step. Use this when you want something other than one element per
+step — several elements entering together, or an element entering on a step that belongs to
+a shot much later in the deck.
+
+### Living with steps
+
+- **Properties** — a step has only a **Title** and **Speaker notes**. There is no transition
+  feel, duration or re-capture, because there is no camera move. The panel names the shot it
+  inherits its camera from.
+- **Reordering** — steps cannot be dragged on their own; they belong to their shot. Dragging
+  a frame card moves the whole group, steps included, and they always stay behind their shot.
+  To move a step, delete it and add a new one where you want it, then repoint the element's
+  **Enters at**.
+- **Deleting** — the `×` on a tick deletes just that step, and any element that entered there
+  falls back to the preceding frame, so the build loses a step rather than collapsing.
+  **Del** on the shot deletes the shot *and* its steps.
+- **Re-capture still works** — re-capturing the shot moves the camera for the entire build.
+- **Export** — steps are flattened into ordinary frames on the way out, so an exported
+  `.html` behaves exactly like the editor.
+
+---
+
+## 7. Element entrance & exit
 
 By default every element is present the whole time. You can make elements appear and
 disappear as the story progresses. With an element selected, open the **Lifecycle** section
 of Properties:
 
-- **Enters at** — *From start* (always present) or a specific frame.
+- **Enters at** — *From start* (always present), a specific frame, or a **reveal step**
+  (§6). The dropdown lists frames and steps together in running order.
 - **Entrance effect** — `none`, `appear`, `fade`, `slide` (choose a direction), or `pulse`
   (a draw-attention beat).
 - **On exit:**
@@ -144,28 +212,34 @@ of Properties:
   - **Leave** — it's removed when you navigate past its frame. Choose **Leaves after**
     (which frame) and an **Exit effect** (`fade`/`slide`/`none`).
 
+When several elements enter at the same frame they don't all pop at once: they **stagger**
+60ms apart, back-to-front in stacking order. Use *Bring forward* / *Send back* to change the
+order they ripple in.
+
 Visibility is fully deterministic: stepping **backward** re-hides or re-shows elements
 correctly, so you can rehearse in any direction.
 
 ---
 
-## 7. Presenting
+## 8. Presenting
 
-Click **▶ Present** (top-right) to enter full-screen playback.
+Click **▶ Present** (top-right) to enter full-screen playback. Playback **always starts at
+the first frame**, whichever frame is selected in the editor.
 
 **Navigation keys:**
 
 | Key | Action |
 |---|---|
-| <kbd>→</kbd> / <kbd>Space</kbd> / <kbd>PageDown</kbd> | Next frame |
-| <kbd>←</kbd> / <kbd>PageUp</kbd> | Previous frame |
+| <kbd>→</kbd> / <kbd>Space</kbd> / <kbd>PageDown</kbd> | Next frame or reveal step |
+| <kbd>←</kbd> / <kbd>PageUp</kbd> | Previous frame or step |
 | <kbd>Home</kbd> | First frame |
 | <kbd>End</kbd> | Last frame |
 | <kbd>O</kbd> | **Overview beat** — pull back to see the whole world, then resume |
 | <kbd>Esc</kbd> | Exit playback |
 
 A faint control bar at the bottom (hover to reveal) offers the same actions, and a progress
-bar runs along the top.
+bar runs along the top — it counts every frame *and* every reveal step, so it advances on
+each press during a build.
 
 **The overview beat** (<kbd>O</kbd>) is the signature move of spatial presentations: it zooms
 all the way out to show where you are in the big picture, then the next navigation returns
@@ -180,13 +254,16 @@ frame using the **Speaker notes** field in Properties.
 
 > Tip: open the presentation window on the projector, the Presenter window on your laptop.
 
+The presenter window reads the **autosaved** copy of the deck, so after a burst of editing
+give autosave a moment before opening it — or reopen the window to pick up the latest.
+
 ### Reduced motion
 If your operating system has "reduce motion" enabled, all glides become instant cuts —
 in both the editor preview and exported files.
 
 ---
 
-## 8. Saving, exporting & importing
+## 9. Saving, exporting & importing
 
 All in the toolbar:
 
@@ -204,7 +281,7 @@ overview), clicking to advance, and honors reduced-motion settings.
 
 ---
 
-## 9. Undo, redo & safety
+## 10. Undo, redo & safety
 
 - **Undo:** <kbd>Ctrl/⌘ + Z</kbd> · **Redo:** <kbd>Ctrl/⌘ + Shift + Z</kbd> (or
   <kbd>Ctrl + Y</kbd>). Also available as toolbar buttons. History covers all content and
@@ -215,7 +292,7 @@ overview), clicking to advance, and honors reduced-motion settings.
 
 ---
 
-## 10. Keyboard shortcut reference
+## 11. Keyboard shortcut reference
 
 **Editor**
 
@@ -225,14 +302,15 @@ overview), clicking to advance, and honors reduced-motion settings.
 | <kbd>Ctrl/⌘ + Shift + Z</kbd> / <kbd>Ctrl + Y</kbd> | Redo |
 | <kbd>Delete</kbd> / <kbd>Backspace</kbd> | Delete selected element |
 | <kbd>Esc</kbd> | Deselect |
+| <kbd>Shift</kbd> / <kbd>⌘/Ctrl</kbd> + click | Add/remove an element from the selection |
 | Mouse wheel | Zoom (to cursor) |
 | Drag empty canvas | Pan |
 
-**Playback** — see §7.
+**Playback** — see §8.
 
 ---
 
-## 11. Tips & limits
+## 12. Tips & limits
 
 - **Bring polished assets.** pres-sure places and frames content; it deliberately has no
   drawing tools, shape libraries or chart builders. Design visuals elsewhere, import them
@@ -241,6 +319,9 @@ overview), clicking to advance, and honors reduced-motion settings.
   warning appears on raster images enlarged past their native resolution.
 - **Motion content:** use **GIFs** (embedded video is not supported in this round).
 - **Big jumps feel best with the overview beat** — pull back, then dive into the next region.
+- **Learn reveals from a worked example.** `fixtures/hold-frames-demo.pressure.json` is a
+  ready-made deck exercising every reveal feature — import it and step through. Each frame's
+  speaker notes say what that step demonstrates. See `fixtures/README.md`.
 - **Not yet supported:** embedded video, PDF/EPS import, real-time multi-user collaboration,
   and SVG/vector editing. These are out of scope by design or deferred.
 
