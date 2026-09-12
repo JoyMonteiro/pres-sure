@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useStore } from "../store/store";
 import { frameToCamera } from "../camera/camera";
+import { holdGroups, resolveFrameRect } from "../playback/holds";
 import { useCameraTo } from "../playback/useCameraTo";
 import { Thumbnail } from "./Thumbnail";
 
@@ -14,7 +15,8 @@ export function Timeline() {
   const frameToSelection = useStore((s) => s.frameToSelection);
   const duplicateFrame = useStore((s) => s.duplicateFrame);
   const removeFrame = useStore((s) => s.removeFrame);
-  const reorderFrames = useStore((s) => s.reorderFrames);
+  const moveFrameGroup = useStore((s) => s.moveFrameGroup);
+  const addHoldStep = useStore((s) => s.addHoldStep);
   const updateFrame = useStore((s) => s.updateFrame);
   const selectedCount = useStore((s) => s.selectedIds.length);
   const cameraTo = useCameraTo();
@@ -22,18 +24,24 @@ export function Timeline() {
   const dragIdx = useRef<number | null>(null);
   const [dragging, setDragging] = useState<number | null>(null);
 
-  const goTo = (id: string) => {
-    const f = frames.find((fr) => fr.id === id);
-    if (!f) return;
+  const groups = holdGroups(frames);
+
+  // Index is needed as well as id: a hold's camera comes from its position in the list.
+  const goTo = (id: string, index: number) => {
+    const f = frames[index];
+    const rect = resolveFrameRect(frames, index);
+    if (!f || !rect) return;
     setCurrentFrame(id);
-    cameraTo(frameToCamera(f, viewport), f.easing, f.duration);
+    cameraTo(frameToCamera(rect, viewport), f.easing, f.duration);
   };
 
   return (
     <div className="timeline">
       <div className="timeline-head">
         <strong style={{ fontSize: 13 }}>Timeline</strong>
-        <span style={{ color: "var(--muted)", fontSize: 12 }}>{frames.length} frames</span>
+        <span style={{ color: "var(--muted)", fontSize: 12 }}>
+          {groups.length} shots · {frames.length} steps
+        </span>
         <div style={{ flex: 1 }} />
         <button onClick={() => captureFrame()} title="Capture the current view as a frame">
           + Frame from view
@@ -47,51 +55,87 @@ export function Timeline() {
         </button>
       </div>
       <div className="timeline-strip">
-        {frames.map((f, i) => (
+        {groups.map((g, gi) => (
           <div
-            key={f.id}
-            className={`frame-card${f.id === currentFrameId ? " current" : ""}${dragging === i ? " dragging" : ""}`}
-            draggable
-            onDragStart={() => {
-              dragIdx.current = i;
-              setDragging(i);
-            }}
+            className="frame-group"
+            key={g.shot.id}
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => {
-              if (dragIdx.current !== null && dragIdx.current !== i) reorderFrames(dragIdx.current, i);
+              if (dragIdx.current !== null && dragIdx.current !== gi) moveFrameGroup(dragIdx.current, gi);
               dragIdx.current = null;
               setDragging(null);
             }}
-            onDragEnd={() => setDragging(null)}
-            onClick={() => goTo(f.id)}
           >
-            <Thumbnail presentation={presentation} frame={f} index={i} />
-            <div className="frame-meta">
-              <span className="idx">{i + 1}</span>
-              <input
-                value={f.title}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => updateFrame(f.id, { title: e.target.value })}
-              />
+            <div
+              className={`frame-card${g.shot.id === currentFrameId ? " current" : ""}${
+                dragging === gi ? " dragging" : ""
+              }`}
+              draggable
+              onDragStart={() => {
+                dragIdx.current = gi;
+                setDragging(gi);
+              }}
+              onDragEnd={() => setDragging(null)}
+              onClick={() => goTo(g.shot.id, g.startIndex)}
+            >
+              <Thumbnail presentation={presentation} frame={g.shot} index={g.startIndex} />
+              <div className="frame-meta">
+                <span className="idx">{gi + 1}</span>
+                <input
+                  value={g.shot.title}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => updateFrame(g.shot.id, { title: e.target.value })}
+                />
+              </div>
+              <div className="row">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    duplicateFrame(g.shot.id);
+                  }}
+                >
+                  Dup
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFrame(g.shot.id);
+                  }}
+                  title="Delete this shot and its reveal steps"
+                >
+                  Del
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addHoldStep(g.shot.id);
+                  }}
+                  title="Add a reveal step that keeps this camera"
+                >
+                  + Step
+                </button>
+              </div>
             </div>
-            <div className="row">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  duplicateFrame(f.id);
-                }}
+            {g.holds.map((h, hi) => (
+              <div
+                key={h.id}
+                className={`hold-tick${h.id === currentFrameId ? " current" : ""}`}
+                title={`${h.title} — same camera as “${g.shot.title}”`}
+                onClick={() => goTo(h.id, g.startIndex + 1 + hi)}
               >
-                Dup
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeFrame(f.id);
-                }}
-              >
-                Del
-              </button>
-            </div>
+                <span className="tick-idx">{hi + 2}</span>
+                <button
+                  className="tick-del"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFrame(h.id);
+                  }}
+                  title="Delete this step"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
           </div>
         ))}
         {frames.length === 0 && (
