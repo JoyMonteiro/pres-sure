@@ -77,8 +77,15 @@ export function planReveal(
   let end = anchorIdx;
   while (end + 1 < frames.length && isHold(frames[end + 1])) end++;
 
+  // Number from the head of the anchor's group, not from the anchor: a second build on a
+  // group that already has holds must continue its numbering rather than restart at 2.
+  // Matches `addHoldStep`'s `stepNo`. A leading hold heads its own group (see `holdGroups`).
+  let groupStart = anchorIdx;
+  while (groupStart > 0 && isHold(frames[groupStart])) groupStart--;
+  const firstStepNo = end - groupStart + 2;
+
   const rest = elementIds.slice(1);
-  const holds = rest.map((_, k) => makeHoldFrame(`Step ${k + 2}`));
+  const holds = rest.map((_, k) => makeHoldFrame(`Step ${firstStepNo + k}`));
 
   const assignments = new Map<string, string>();
   assignments.set(elementIds[0], currentFrameId);

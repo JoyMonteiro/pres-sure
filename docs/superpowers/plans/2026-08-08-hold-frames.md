@@ -303,6 +303,26 @@ describe("planReveal", () => {
     expect(plan.holds.map((h) => h.title)).toEqual(["Step 2", "Step 3"]);
   });
 
+  it("continues the group's step numbers instead of restarting at 2", () => {
+    holdSeq = 0;
+    const frames = [shot("f1"), hold("h1"), hold("h2"), shot("f2")];
+    const plan = planReveal(frames, ["a", "b", "c"], "f1", stubHold)!;
+    expect(plan.holds.map((h) => h.title)).toEqual(["Step 4", "Step 5"]);
+  });
+
+  it("numbers from the group, not the anchor, when a hold is the anchor", () => {
+    holdSeq = 0;
+    const frames = [shot("f1"), hold("h1"), hold("h2"), shot("f2")];
+    const plan = planReveal(frames, ["a", "b"], "h1", stubHold)!;
+    expect(plan.holds.map((h) => h.title)).toEqual(["Step 4"]);
+  });
+
+  it("numbers a leading hold's group from its own head", () => {
+    holdSeq = 0;
+    const plan = planReveal([hold("h1")], ["a", "b"], "h1", stubHold)!;
+    expect(plan.holds.map((h) => h.title)).toEqual(["Step 2"]);
+  });
+
   it("inserts directly after the anchor shot when it has no holds yet", () => {
     holdSeq = 0;
     const frames = [shot("f1"), shot("f2")];
@@ -372,7 +392,14 @@ export function planReveal(
   while (end + 1 < frames.length && isHold(frames[end + 1])) end++;
 
   const rest = elementIds.slice(1);
-  const holds = rest.map((_, k) => makeHoldFrame(`Step ${k + 2}`));
+  // Number from the head of the anchor's group, not from the anchor: a second build on a
+  // group that already has holds must continue its numbering rather than restart at 2.
+  // Matches `addHoldStep`'s `stepNo`. A leading hold heads its own group (see `holdGroups`).
+  let groupStart = anchorIdx;
+  while (groupStart > 0 && isHold(frames[groupStart])) groupStart--;
+  const firstStepNo = end - groupStart + 2;
+
+  const holds = rest.map((_, k) => makeHoldFrame(`Step ${firstStepNo + k}`));
 
   const assignments = new Map<string, string>();
   assignments.set(elementIds[0], currentFrameId);
