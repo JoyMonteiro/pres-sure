@@ -8,9 +8,20 @@ import { computeSnap } from "../playback/snapping";
 import { STAGGER_STEP_S } from "../playback/stagger";
 
 /** Editable element wrapped in react-rnd (scale-aware drag/resize — §2.2). */
-export function EditableElement({ el, scale, selected }: { el: Element; scale: number; selected: boolean }) {
+export function EditableElement({
+  el,
+  scale,
+  selected,
+  selectionIndex = 0,
+}: {
+  el: Element;
+  scale: number;
+  selected: boolean;
+  selectionIndex?: number;
+}) {
   const update = useStore((s) => s.updateElement);
   const select = useStore((s) => s.select);
+  const toggleSelect = useStore((s) => s.toggleSelect);
   const setGuides = useStore((s) => s.setGuides);
 
   const others = () =>
@@ -31,7 +42,10 @@ export function EditableElement({ el, scale, selected }: { el: Element; scale: n
       scale={scale}
       onMouseDown={(e) => {
         e.stopPropagation();
-        select([el.id]);
+        // Shift/meta extends the selection; order is preserved because toggleSelect
+        // appends, and that order is what a build reveals in.
+        if (e.shiftKey || e.metaKey) toggleSelect(el.id);
+        else select([el.id]);
       }}
       onDrag={(_e, d) => {
         const { guides } = computeSnap({ x: d.x, y: d.y, w: el.w, h: el.h }, others(), 6 / scale);
@@ -49,6 +63,7 @@ export function EditableElement({ el, scale, selected }: { el: Element; scale: n
       disableDragging={el.type === "text" && selected && document.activeElement?.getAttribute("data-el") === el.id}
     >
       <div className="content" style={{ transform: `rotate(${el.rotation}deg)`, width: "100%", height: "100%" }}>
+        {selectionIndex > 0 && <div className="sel-ordinal">{selectionIndex}</div>}
         {selected && blur && <div className="blur-hint">⚠ zoomed past native resolution — may blur</div>}
         <ElementBody el={el} editable={selected && el.type === "text"} />
       </div>

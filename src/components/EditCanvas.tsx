@@ -85,7 +85,14 @@ export function EditCanvas() {
     >
       <div className="world" style={{ transform: cameraToTransform(cam, viewport) }}>
         {sorted.map((el) => (
-          <EditableElement key={el.id} el={el} scale={cam.scale} selected={selectedIds.includes(el.id)} />
+          <EditableElement
+            key={el.id}
+            el={el}
+            scale={cam.scale}
+            selected={selectedIds.includes(el.id)}
+            // Only meaningful for a multi-selection — one selected element needs no number.
+            selectionIndex={selectedIds.length > 1 ? selectedIds.indexOf(el.id) + 1 : 0}
+          />
         ))}
         {guides.map((g, i) =>
           g.axis === "x" ? (

@@ -85,6 +85,12 @@ label { color: var(--muted); font-size: 12px; }
   position: absolute; top: -22px; left: 0; font-size: 11px; color: #ffcf5c;
   background: rgba(0,0,0,0.6); padding: 1px 6px; border-radius: 4px; white-space: nowrap;
 }
+.sel-ordinal {
+  position: absolute; top: -10px; left: -10px; z-index: 5;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: var(--accent); color: #fff; font-size: 11px; font-weight: 700;
+  display: grid; place-items: center; pointer-events: none;
+}
 
 /* ---- Timeline ---- */
 .timeline-head { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--line); }
