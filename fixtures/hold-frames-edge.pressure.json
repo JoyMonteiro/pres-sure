@@ -1,0 +1,99 @@
+{
+  "id": "pres_hold_edge",
+  "title": "Hold frames edge cases",
+  "createdAt": 1786147200000,
+  "updatedAt": 1786147200000,
+  "world": {
+    "backgroundColor": "#f4f4f5"
+  },
+  "elements": [
+    {
+      "id": "el_e_1",
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "w": 1000,
+      "h": 88,
+      "rotation": 0,
+      "z": 0,
+      "content": "Frame 1 is a hold with no shot before it",
+      "textStyle": {
+        "fontSize": 40,
+        "fontWeight": 600,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": null,
+        "enterEffect": "none",
+        "onExit": "persist"
+      }
+    },
+    {
+      "id": "el_e_2",
+      "type": "text",
+      "x": 0,
+      "y": 130,
+      "w": 1000,
+      "h": 88,
+      "rotation": 0,
+      "z": 0,
+      "content": "It borrows the first shot's camera instead of its 1×1 placeholder",
+      "textStyle": {
+        "fontSize": 40,
+        "fontWeight": 600,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": "fr_e_shot",
+        "enterEffect": "fade",
+        "onExit": "persist"
+      }
+    }
+  ],
+  "frames": [
+    {
+      "id": "fr_e_lead",
+      "title": "Leading hold",
+      "x": 0,
+      "y": 0,
+      "w": 1,
+      "h": 1,
+      "rotation": 0,
+      "duration": 0,
+      "easing": "cut",
+      "notes": "Must render at the shot's camera below — NOT an extreme zoom into a 1×1 rect. Check the timeline draws it as its own group, and the presenter view's next-up pane too.",
+      "kind": "hold"
+    },
+    {
+      "id": "fr_e_shot",
+      "title": "The only shot",
+      "x": -80,
+      "y": -80,
+      "w": 1160,
+      "h": 420,
+      "rotation": 0,
+      "duration": "auto",
+      "easing": "smooth",
+      "notes": "Same camera as the leading hold."
+    },
+    {
+      "id": "fr_e_trail",
+      "title": "Trailing hold",
+      "x": 0,
+      "y": 0,
+      "w": 1,
+      "h": 1,
+      "rotation": 0,
+      "duration": 0,
+      "easing": "cut",
+      "notes": "Ordinary case, for contrast.",
+      "kind": "hold"
+    }
+  ],
+  "settings": {
+    "defaultEasing": "smooth",
+    "defaultDuration": "auto"
+  }
+}
