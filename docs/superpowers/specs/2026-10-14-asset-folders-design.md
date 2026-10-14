@@ -274,6 +274,10 @@ boot      ─▶ remembered handle? ── yes ─▶ overlay ─▶ Reopen ─�
 | Deck edited externally | Conflict banner (D10) |
 | Element deleted | File kept (D9) |
 | `https://` image | Never fetched or copied |
+| Folder has an `index.html` but no deck (e.g. an old reveal.js lecture) | Refused with a message; nothing written |
+| Opening a second folder while one is open | Current deck is inlined from the old folder first, so an empty new folder receives copies of its images |
+| *Close folder* (× on the chip) | Images are re-embedded as data URIs, then the editor leaves folder mode |
+| Malformed `deck.pressure.json` | Refused with a message; the file is neither loaded nor overwritten |
 
 ## 7. Testing
 
