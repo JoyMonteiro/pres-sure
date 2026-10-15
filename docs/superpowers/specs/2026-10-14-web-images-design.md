@@ -67,7 +67,7 @@ resolves it:
 https://<wiki>/w/api.php?action=query&format=json&formatversion=2&origin=*
   &prop=imageinfo&iiprop=url|size|mime|extmetadata
   &iiextmetadatafilter=Artist|LicenseShortName|AttributionRequired
-  &iiurlwidth=3840&titles=<title>
+  &iiurlwidth=1920&titles=<title>
 ```
 
 Verified on 2026-10-14 against live responses:
@@ -80,14 +80,16 @@ Verified on 2026-10-14 against live responses:
 - Rewriting the width in a thumbnail URL is **not** a substitute: `1280px-` works for the
   Newton portrait but `2560px-` returns HTTP 400, because thumbnails cannot exceed the
   original (2218px). The API returns the original in that case.
-- Thumbnails come only in fixed widths. A request is rounded **up** to the next of 1280,
-  1920 or 3840 (asking for 2000 or 2560 yields `3840px-`), and when the original is not much
-  larger than the request, the original itself comes back (`utm_content=thumbnail_unscaled`;
-  e.g. a 3000×3002 JPEG for a 2560 request). Size for a 6780px original: 1920px ≈ 570 KB,
-  3840px ≈ 3 MB. 3840 is requested so images stay sharp when zoomed on a large display.
+- Thumbnails come only in fixed widths (1280, 1920, 3840); other requests are rounded
+  **up** (asking for 2000 or 2560 yields `3840px-`). **1920 is requested** (user decision,
+  2026-10-15): a 6780px original costs ≈ 570 KB at 1920 against ≈ 3 MB at 3840, which
+  matters for copied images in picture-heavy decks. With a 1920 request, every original
+  checked that was wider than 1920 (2218, 3000, 6780px) came back as an exact `1920px-`
+  thumbnail; an original narrower than 1920 comes back unchanged
+  (`utm_content=thumbnail_unscaled`).
 - `thumbwidth`/`thumbheight` echo the *request*, not the file served (`File:Example.jpg` is
-  172×178 but reports `thumbwidth: 2560`; the 6780px original reports 2560 while serving
-  3840). They are never used.
+  172×178 but reports `thumbwidth: 2560`; a 6780px original asked for 2560 reports 2560
+  while serving 3840). They are never used.
 - A missing file comes back as `pages[0].missing: true` with no `imageinfo`.
 - `title` may be sent with underscores or spaces; the API normalises it.
 
@@ -97,7 +99,7 @@ Verified on 2026-10-14 against live responses:
 |---|---|---|
 | `image/svg+xml` | `url` (the original SVG) | Vector stays sharp at any zoom; `thumburl` is a PNG |
 | `image/gif` | `url` (the original) | Large GIF thumbnails may lose animation |
-| anything else | `thumburl` | ≤3840px wide (often the original — see D3) |
+| anything else | `thumburl` | 1920px wide, or the original when that is narrower |
 
 `utm_source`, `utm_campaign` and `utm_content` query parameters are stripped from the
 chosen URL. The element's `w`×`h` use the original's aspect ratio; `naturalW`/`naturalH`
@@ -319,12 +321,10 @@ Add ─▶ copy? ── no ──▶ content = url ─────────�
   from `File:Portrait_of_Sir_Isaac_Newton,_1689_(brightened).jpg` →
   *"Godfrey Kneller"*.
 - `resolveWikimedia` with a fake `FetchJson` serving trimmed copies of real responses
-  (stored as test fixtures): Newton JPEG (2218×2671, original returned → natural size 2218×2671,
+  (stored as test fixtures): Newton JPEG (2218×2671 → `1920px-` thumb, natural 1920×2312,
   credit from snippet when given and built from metadata when not); `Wikipedia-logo-v2.svg`
   (original SVG URL, no natural size); `Rotating earth (large).gif` (original); a file
-  `The_Earth_seen_from_Apollo_17.jpg` (3000×3002, unscaled original returned for the
-  request); `Pillars_of_creation_2014_HST_WFC3-UVIS_full-res_denoised.jpg` (6780×7071 →
-  `3840px-` thumb, natural 3840×4004); missing file; fetch rejection with and
+  `File:Example.jpg` (172×178 → original URL, natural 172×178); missing file; fetch rejection with and
   without `fallbackSrc`. Every returned URL has no `utm_` parameters; `apiUrl` output
   matches D3.
 - `layoutWebImage`: aspect → height; caption geometry and font size; escaping of `&` and
@@ -334,7 +334,7 @@ Add ─▶ copy? ── no ──▶ content = url ─────────�
 
 1. Paste the Newton snippet into *+ From web* → preview, credit, *Add* → portrait with the
    correct proportions and caption; one undo removes both.
-2. Zoom into the portrait — no blur hint (natural width 2218).
+2. Zoom into the portrait until it fills the screen — no blur hint (natural width 1920).
 3. Paste `https://en.wikipedia.org/wiki/Isaac_Newton` with an image open
    (`#/media/File:…`) → resolves; credit built from metadata.
 4. Paste `https://commons.wikimedia.org/wiki/File:Wikipedia-logo-v2.svg` → stays sharp at
