@@ -121,7 +121,7 @@ function ElementProps({ id }: { id: string }) {
         </>
       )}
 
-      {el.type !== "text" && isRemoteUrl(el.content) && <LinkedImageField id={id} url={el.content} />}
+      {el.type !== "text" && isRemoteUrl(el.content) && <LinkedImageField key={id} id={id} url={el.content} />}
 
       <h3 style={{ marginTop: 14 }}>Lifecycle</h3>
       <div className="field">
