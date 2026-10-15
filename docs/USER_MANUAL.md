@@ -279,6 +279,14 @@ All in the toolbar:
 The exported file responds to the same navigation keys (arrows/space, <kbd>O</kbd> for
 overview), clicking to advance, and honors reduced-motion settings.
 
+**Linking to a frame.** The exported file keeps the current frame in the address bar,
+so you can copy a frame's link while rehearsing. A link names a frame by its title
+(`deck.html#l3-keeling-curve` for "L3: Keeling Curve") or by its number (`deck.html#12`).
+The deck opens on that frame, and if the deck is already open, a link clicked there flies
+to it. Frames with an empty title, a title made only of digits, or a title used by an
+earlier frame are named by their number. Renaming a frame breaks links that use its
+title, so keep a title fixed once other pages link to it.
+
 ---
 
 ## 10. Undo, redo & safety

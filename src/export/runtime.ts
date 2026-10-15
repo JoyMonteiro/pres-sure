@@ -116,9 +116,19 @@ export function runtimeScript(): string {
   }
   function offset(dir){ var d=80; return dir==='right'?{x:d,y:0}:dir==='up'?{x:0,y:-d}:dir==='down'?{x:0,y:d}:{x:-d,y:0}; }
 
+  // ---- deep links (mirrors deepLink.ts): #title-slug or #number ----
+  function slugOf(t){ return String(t||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+  var taken={}, hashes=frames.map(function(f,i){ var s=slugOf(f.title); if(!s||/^\d+$/.test(s)||taken[s]) return String(i+1); taken[s]=1; return s; });
+  function frameFromHash(hash){
+    var h=hash.replace(/^#/,''); try{ h=decodeURIComponent(h); }catch(e){ return -1; } h=h.toLowerCase();
+    if(/^\d+$/.test(h)){ var n=Number(h); return n>=1&&n<=hashes.length?n-1:-1; }
+    return h?hashes.indexOf(h):-1;
+  }
+  function setHash(i){ try{ history.replaceState(null,'','#'+hashes[i]); }catch(e){} }
+
   function go(i){
     i=Math.max(0,Math.min(frames.length-1,i)); var f=frames[i]; if(!f) return;
-    overview=false; index=i; render(i);
+    overview=false; index=i; render(i); setHash(i);
     animateTo(frameToCam(f,vp()), f.easing, f.duration);
     if(progress) progress.style.width=((i+1)/frames.length*100)+'%';
   }
@@ -138,7 +148,11 @@ export function runtimeScript(): string {
   });
   stage.addEventListener('click',function(){ overview?go(index):go(index+1); });
   window.addEventListener('resize',function(){ applyCam(curCam); });
+  window.addEventListener('hashchange',function(){ var i=frameFromHash(location.hash); if(i>=0&&(i!==index||overview)) go(i); });
 
-  if(frames.length){ render(0); applyCam(curCam); if(progress) progress.style.width=(100/frames.length)+'%'; }
+  if(frames.length){
+    index=Math.max(0,frameFromHash(location.hash)); curCam=frameToCam(frames[index],vp());
+    render(index); applyCam(curCam); if(progress) progress.style.width=((index+1)/frames.length*100)+'%';
+  }
 })();`;
 }
