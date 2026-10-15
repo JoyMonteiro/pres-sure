@@ -2,6 +2,7 @@ import { useEffect, useReducer, useRef } from "react";
 import { useStore } from "../store/store";
 import { exportJson, importJson } from "../store/persistence";
 import { exportHtml } from "../export/exportHtml";
+import { blobToDataUrl } from "../store/assets";
 import type { ElementType } from "../types";
 
 function useTemporal() {
@@ -9,14 +10,6 @@ function useTemporal() {
   useEffect(() => useStore.temporal.subscribe(() => force()), []);
   return useStore.temporal.getState();
 }
-
-const fileToDataUrl = (f: File) =>
-  new Promise<string>((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result as string);
-    r.onerror = rej;
-    r.readAsDataURL(f);
-  });
 
 const typeFor = (f: File): ElementType =>
   f.type === "image/svg+xml" ? "svg" : f.type === "image/gif" ? "gif" : "image";
@@ -34,7 +27,7 @@ export function Toolbar() {
   const onAddAsset = async (files: FileList | null) => {
     if (!files) return;
     for (const f of Array.from(files)) {
-      const url = await fileToDataUrl(f);
+      const url = await blobToDataUrl(f);
       addElement(typeFor(f), url);
     }
   };
