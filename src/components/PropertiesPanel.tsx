@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useStore } from "../store/store";
 import { EASING_PRESETS } from "../camera/easing";
 import { holdGroups, isHold } from "../playback/holds";
+import { copyRemoteImage, hostOf, isRemoteUrl } from "../remote/copyRemote";
 import type { Element, EnterEffect, ExitEffect, SlideDirection } from "../types";
 
 const num = (v: string, fb = 0) => (v === "" || isNaN(+v) ? fb : +v);
@@ -119,6 +121,8 @@ function ElementProps({ id }: { id: string }) {
         </>
       )}
 
+      {el.type !== "text" && isRemoteUrl(el.content) && <LinkedImageField id={id} url={el.content} />}
+
       <h3 style={{ marginTop: 14 }}>Lifecycle</h3>
       <div className="field">
         <label>Enters at</label>
@@ -200,6 +204,35 @@ function ElementProps({ id }: { id: string }) {
         Delete element
       </button>
     </>
+  );
+}
+
+/** A linked web image: say where it comes from, and offer to store a copy (spec §4 UI). */
+function LinkedImageField({ id, url }: { id: string; url: string }) {
+  const update = useStore((s) => s.updateElement);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const saveCopy = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      update(id, { content: await copyRemoteImage(url) });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="field">
+      <label>Linked from {hostOf(url)} — needs internet to show</label>
+      <button disabled={busy} onClick={saveCopy}>
+        {busy ? "Downloading…" : "Save a copy"}
+      </button>
+      {error && <div className="error">{error}</div>}
+    </div>
   );
 }
 
