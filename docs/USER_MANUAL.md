@@ -69,6 +69,30 @@ From the toolbar:
 - **+ Text** — drops an editable text box at the current view center.
 - **+ Image / GIF / SVG** — file picker (PNG, JPG, WebP, GIF, SVG). You can select several
   at once. Assets are embedded into the project, so everything stays self-contained.
+- **+ From web** — paste an image from the web:
+  - the HTML snippet Wikimedia Commons gives under *Use this file on the web* (best: it
+    carries the credit line),
+  - a Wikipedia or Commons file link (`…/wiki/File:…`, or an article link ending in
+    `#/media/File:…`),
+  - a Wikimedia image address (including the small thumbnails you get by copying an image
+    off Wikipedia), or
+  - any other image URL.
+
+  For Wikimedia images pres-sure fetches a **1920px** version (or the original, if smaller;
+  SVGs and GIFs always come as the original) and adds a **credit caption** underneath —
+  *Artist, Licence, via Wikimedia Commons*. Most Commons images are CC BY-SA and require
+  that credit; the caption is an ordinary text box you can move, restyle or delete.
+
+  **Save a copy in the project** decides how the image is kept:
+  - unticked (**linked**, the default) — the deck stores only the address and the image is
+    loaded from the web whenever it is shown. Keeps projects small; needs internet.
+  - ticked (**copy**) — the image is downloaded into the project, like an upload. Works
+    offline. Some sites refuse copying; pres-sure then says so and you can link instead.
+
+  The choice you add with becomes the project's default for next time. A linked image's
+  properties panel says where it is linked from and offers **Save a copy** to convert it.
+  You can also simply **paste** (<kbd>⌘/Ctrl + V</kbd>) a link or snippet onto the canvas —
+  the same dialog opens, filled in.
 
 ### Selecting & arranging
 - **Click** an element to select it (it shows a blue outline and resize handles).
@@ -274,7 +298,9 @@ All in the toolbar:
 - **Export .html** — produce a **single self-contained `.html`** file: static content +
   embedded assets + a small built-in player. It plays in any modern browser with **no
   internet and no dependency on this editor** — the shareable deliverable. Text uses a
-  system-font stack for portability.
+  system-font stack for portability. **Exception:** images added from the web as *linked*
+  are loaded from their web address, so they need internet; offline they show as broken
+  images. Use *Save a copy* on them first if the file must work offline.
 
 The exported file responds to the same navigation keys (arrows/space, <kbd>O</kbd> for
 overview), clicking to advance, and honors reduced-motion settings.
@@ -302,6 +328,7 @@ overview), clicking to advance, and honors reduced-motion settings.
 | <kbd>Ctrl/⌘ + Shift + Z</kbd> / <kbd>Ctrl + Y</kbd> | Redo |
 | <kbd>Delete</kbd> / <kbd>Backspace</kbd> | Delete selected element |
 | <kbd>Esc</kbd> | Deselect |
+| <kbd>Ctrl/⌘ + V</kbd> on the canvas | Paste an image link or Commons snippet → *+ From web* |
 | <kbd>Shift</kbd> / <kbd>⌘/Ctrl</kbd> + click | Add/remove an element from the selection |
 | Mouse wheel | Zoom (to cursor) |
 | Drag empty canvas | Pan |
@@ -317,6 +344,8 @@ overview), clicking to advance, and honors reduced-motion settings.
   here.
 - **Use SVG for anything you'll zoom into hard** — it stays razor-sharp at any zoom. A blur
   warning appears on raster images enlarged past their native resolution.
+- **Credit what you borrow.** Images from Wikimedia arrive with a credit caption; keep it
+  (or move all credits to a closing slide) — most Commons licences require it.
 - **Motion content:** use **GIFs** (embedded video is not supported in this round).
 - **Big jumps feel best with the overview beat** — pull back, then dive into the next region.
 - **Learn reveals from a worked example.** `fixtures/hold-frames-demo.pressure.json` is a
