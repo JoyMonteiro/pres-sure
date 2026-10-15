@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "../store/store";
 import { parseImageInput } from "../remote/parseImageInput";
 import { resolveInput, type ResolvedImage } from "../remote/resolveImage";
@@ -24,6 +24,19 @@ export function WebImageDialog({ initialText, onClose }: { initialText: string; 
   const [status, setStatus] = useState<Status>({ kind: "empty" });
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+  // Set once the dialog is dismissed or gone, so a download finishing later adds nothing.
+  // Reset on mount because StrictMode runs the cleanup once before the real mount.
+  const cancelled = useRef(false);
+  const cancel = () => {
+    cancelled.current = true;
+    onClose();
+  };
+  useEffect(() => {
+    cancelled.current = false;
+    return () => {
+      cancelled.current = true;
+    };
+  }, []);
 
   // Resolve once typing pauses; the cleanup discards any older in-flight result.
   useEffect(() => {
@@ -52,7 +65,9 @@ export function WebImageDialog({ initialText, onClose }: { initialText: string; 
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      cancelled.current = true;
+      onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -68,12 +83,14 @@ export function WebImageDialog({ initialText, onClose }: { initialText: string; 
       try {
         content = await copyRemoteImage(r.url);
       } catch (e) {
+        if (cancelled.current) return;
         // Clear the box so the next click on Add links the image instead (spec D9).
         setAddError(messageOf(e));
         setCopy(false);
         setAdding(false);
         return;
       }
+      if (cancelled.current) return;
     }
     const { editorCamera, setWebImagesDefault, addElements } = useStore.getState();
     const layout = layoutWebImage(r, editorCamera);
@@ -87,12 +104,13 @@ export function WebImageDialog({ initialText, onClose }: { initialText: string; 
   };
 
   return (
-    <div className="modal-bg" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="modal-bg" onMouseDown={(e) => e.target === e.currentTarget && cancel()}>
       <div className="modal web-image-dialog">
         <h2>Add an image from the web</h2>
         <textarea
           autoFocus
           rows={4}
+          disabled={adding}
           value={text}
           placeholder="Paste a Wikimedia link, the embed snippet from “Use this file on the web”, or an image URL"
           onChange={(e) => setText(e.target.value)}
@@ -118,12 +136,17 @@ export function WebImageDialog({ initialText, onClose }: { initialText: string; 
           )}
         </div>
         <label className="web-image-copy">
-          <input type="checkbox" checked={copy} onChange={(e) => setCopy(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={copy}
+            disabled={adding}
+            onChange={(e) => setCopy(e.target.checked)}
+          />
           Save a copy in the project
         </label>
         {addError && <div className="error">{addError}</div>}
         <div className="web-image-actions">
-          <button onClick={onClose}>Cancel</button>
+          <button onClick={cancel}>Cancel</button>
           <button className="primary" disabled={status.kind !== "ready" || adding} onClick={add}>
             {adding ? "Downloading…" : "Add"}
           </button>
