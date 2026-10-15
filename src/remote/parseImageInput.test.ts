@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { INVALID_INPUT_MESSAGE, decodeEntities, htmlToText, parseImageInput } from "./parseImageInput";
+import {
+  INVALID_INPUT_MESSAGE,
+  decodeEntities,
+  htmlToText,
+  parseImageInput,
+  pastedImageText,
+} from "./parseImageInput";
 
 // The snippet Commons offers under "Use this file on the web" (spec §8), verbatim.
 const NEWTON_SNIPPET =
@@ -121,6 +127,29 @@ describe("parseImageInput — other input", () => {
       expect(parseImageInput(text)).toEqual(invalid);
     }
   );
+});
+
+describe("pastedImageText", () => {
+  const PNG = "https://example.org/pic.png";
+
+  it("prefers the clipboard HTML when it holds a recognisable snippet", () => {
+    expect(pastedImageText(NEWTON_SNIPPET, "Sir Isaac Newton")).toBe(NEWTON_SNIPPET);
+  });
+
+  it("falls back to the plain text when the HTML is an ordinary link", () => {
+    const html = `<meta charset="utf-8"><a href="https://example.org/page">${PNG}</a>`;
+    expect(pastedImageText(html, PNG)).toBe(PNG);
+  });
+
+  it("uses the plain text when the HTML has no link or image", () => {
+    expect(pastedImageText("<span>hi</span>", PNG)).toBe(PNG);
+    expect(pastedImageText("", PNG)).toBe(PNG);
+  });
+
+  it("returns null when neither is usable", () => {
+    expect(pastedImageText('<a href="https://example.org/page">x</a>', "just words")).toBeNull();
+    expect(pastedImageText("", "")).toBeNull();
+  });
 });
 
 describe("decodeEntities / htmlToText", () => {

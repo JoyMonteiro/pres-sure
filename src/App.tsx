@@ -9,7 +9,7 @@ import { Timeline } from "./components/Timeline";
 import { Player } from "./components/Player";
 import { PresenterView } from "./components/PresenterView";
 import { WebImageDialog } from "./components/WebImageDialog";
-import { parseImageInput } from "./remote/parseImageInput";
+import { pastedImageText } from "./remote/parseImageInput";
 
 export function App() {
   if (window.location.hash === "#presenter") return <PresenterView />;
@@ -69,9 +69,11 @@ function Editor() {
     const onPaste = (e: ClipboardEvent) => {
       const t = e.target as HTMLElement;
       if (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable) return;
-      const html = e.clipboardData?.getData("text/html") ?? "";
-      const text = /<(a|img)\b/i.test(html) ? html : (e.clipboardData?.getData("text/plain") ?? "");
-      if (parseImageInput(text).kind === "invalid") return;
+      const text = pastedImageText(
+        e.clipboardData?.getData("text/html") ?? "",
+        e.clipboardData?.getData("text/plain") ?? ""
+      );
+      if (text === null) return;
       e.preventDefault();
       setWebDialog(text);
     };

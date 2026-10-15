@@ -45,6 +45,16 @@ export function parseImageInput(text: string): ImageInput {
   return t.startsWith("<") ? parseHtml(t) : parseUrl(t);
 }
 
+/**
+ * What a canvas paste should open the dialog with: the clipboard HTML when it carries a
+ * recognisable link or image, else the plain text (an ordinary <a href> copied from Slack or
+ * Docs has the URL there), else null.
+ */
+export function pastedImageText(html: string, plain: string): string | null {
+  if (/<(a|img)\b/i.test(html) && parseImageInput(html).kind !== "invalid") return html;
+  return parseImageInput(plain).kind !== "invalid" ? plain : null;
+}
+
 function parseHtml(html: string): ImageInput {
   const img = html.match(/<img\b[^>]*>/i)?.[0];
   const src = img ? attr(img, "src") : undefined;
