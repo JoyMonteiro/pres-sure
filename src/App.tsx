@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useStore } from "./store/store";
 import { loadLocal } from "./store/persistence";
 import { TEMPLATES, blankPresentation } from "./store/templates";
@@ -8,6 +8,8 @@ import { PropertiesPanel } from "./components/PropertiesPanel";
 import { Timeline } from "./components/Timeline";
 import { Player } from "./components/Player";
 import { PresenterView } from "./components/PresenterView";
+import { WebImageDialog } from "./components/WebImageDialog";
+import { parseImageInput } from "./remote/parseImageInput";
 
 export function App() {
   if (window.location.hash === "#presenter") return <PresenterView />;
@@ -19,6 +21,9 @@ function Editor() {
   const loadPresentation = useStore((s) => s.loadPresentation);
   const [booted, setBooted] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  /** null = closed; otherwise the text the web-image dialog opens with. */
+  const [webDialog, setWebDialog] = useState<string | null>(null);
+  const closeWebDialog = useCallback(() => setWebDialog(null), []);
 
   // Bootstrap: restore autosaved work, else offer a template.
   useEffect(() => {
@@ -58,17 +63,34 @@ function Editor() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Pasting an image link or Commons snippet onto the canvas opens the web-image dialog.
+  useEffect(() => {
+    if (mode !== "edit" || showPicker || webDialog !== null) return;
+    const onPaste = (e: ClipboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable) return;
+      const html = e.clipboardData?.getData("text/html") ?? "";
+      const text = /<(a|img)\b/i.test(html) ? html : (e.clipboardData?.getData("text/plain") ?? "");
+      if (parseImageInput(text).kind === "invalid") return;
+      e.preventDefault();
+      setWebDialog(text);
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [mode, showPicker, webDialog]);
+
   if (!booted) return null;
   if (mode === "play") return <Player />;
 
   return (
     <div className="editor">
-      <Toolbar />
+      <Toolbar onAddFromWeb={() => setWebDialog("")} />
       <div className="canvas-area">
         <EditCanvas />
       </div>
       <PropertiesPanel />
       <Timeline />
+      {webDialog !== null && <WebImageDialog initialText={webDialog} onClose={closeWebDialog} />}
       {showPicker && (
         <div className="modal-bg">
           <div className="modal">

@@ -14,7 +14,7 @@ function useTemporal() {
 const typeFor = (f: File): ElementType =>
   f.type === "image/svg+xml" ? "svg" : f.type === "image/gif" ? "gif" : "image";
 
-export function Toolbar() {
+export function Toolbar({ onAddFromWeb }: { onAddFromWeb: () => void }) {
   const title = useStore((s) => s.presentation.title);
   const setTitle = useStore((s) => s.setTitle);
   const addElement = useStore((s) => s.addElement);
@@ -41,6 +41,9 @@ export function Toolbar() {
       <div className="group">
         <button onClick={() => addElement("text", "New text")}>+ Text</button>
         <button onClick={() => fileRef.current?.click()}>+ Image / GIF / SVG</button>
+        <button onClick={onAddFromWeb} title="Add an image from Wikimedia or any web address">
+          + From web
+        </button>
         <input
           ref={fileRef}
           type="file"
