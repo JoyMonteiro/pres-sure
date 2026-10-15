@@ -2,6 +2,7 @@ import { useEffect, useReducer, useRef } from "react";
 import { useStore } from "../store/store";
 import { exportJson, importJson } from "../store/persistence";
 import { exportHtml } from "../export/exportHtml";
+import { blobToDataUrl } from "../store/assets";
 import type { ElementType } from "../types";
 
 function useTemporal() {
@@ -10,18 +11,10 @@ function useTemporal() {
   return useStore.temporal.getState();
 }
 
-const fileToDataUrl = (f: File) =>
-  new Promise<string>((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result as string);
-    r.onerror = rej;
-    r.readAsDataURL(f);
-  });
-
 const typeFor = (f: File): ElementType =>
   f.type === "image/svg+xml" ? "svg" : f.type === "image/gif" ? "gif" : "image";
 
-export function Toolbar() {
+export function Toolbar({ onAddFromWeb }: { onAddFromWeb: () => void }) {
   const title = useStore((s) => s.presentation.title);
   const setTitle = useStore((s) => s.setTitle);
   const addElement = useStore((s) => s.addElement);
@@ -34,7 +27,7 @@ export function Toolbar() {
   const onAddAsset = async (files: FileList | null) => {
     if (!files) return;
     for (const f of Array.from(files)) {
-      const url = await fileToDataUrl(f);
+      const url = await blobToDataUrl(f);
       addElement(typeFor(f), url);
     }
   };
@@ -48,6 +41,9 @@ export function Toolbar() {
       <div className="group">
         <button onClick={() => addElement("text", "New text")}>+ Text</button>
         <button onClick={() => fileRef.current?.click()}>+ Image / GIF / SVG</button>
+        <button onClick={onAddFromWeb} title="Add an image from Wikimedia or any web address">
+          + From web
+        </button>
         <input
           ref={fileRef}
           type="file"

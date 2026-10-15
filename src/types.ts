@@ -77,9 +77,16 @@ export interface WorldSettings {
   backgroundColor: string;
 }
 
+export type WebImagesMode = "link" | "copy";
+
 export interface PresentationSettings {
   defaultEasing: EasingPreset;
   defaultDuration: number | "auto";
+  /**
+   * Default for "+ From web": link to the image or save a copy in the project. Absent
+   * means "link" — never written until the user picks, so old saves need no migration.
+   */
+  webImages?: WebImagesMode;
 }
 
 export interface Presentation {

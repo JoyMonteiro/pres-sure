@@ -57,3 +57,26 @@ holds behind a shot) but hand-edited or older JSON can contain. It must not blow
 - The timeline draws it as its own group instead of silently dropping it; a frame the
   timeline never draws would still swallow a click during playback.
 - The presenter view's next-up pane must survive it too.
+
+## Web images (no fixture file)
+
+Checks for `docs/superpowers/specs/2026-10-14-web-images-design.md`. Run the editor on a
+spare port so its autosave doesn't touch your real deck: `npx vite --port 5191`.
+
+1. *+ From web* → paste the Newton snippet (spec §8) → preview, credit and *1920 × 2312 px*;
+   *Add* → portrait with correct proportions and the caption beneath; one ⌘Z removes both.
+2. Zoom into the portrait until it fills the screen — no blur hint.
+3. Paste `https://en.wikipedia.org/wiki/Isaac_Newton#/media/File:Portrait_of_Sir_Isaac_Newton,_1689_(brightened).jpg`
+   → resolves; credit built from metadata.
+4. Paste `https://commons.wikimedia.org/wiki/File:Wikipedia-logo-v2.svg` → stays sharp at
+   deep zoom.
+5. With *Save a copy* ticked → *Save .json* shows a `data:` URI for that image; reopen the
+   dialog → the box is still ticked.
+6. A linked image's properties panel shows *Linked from upload.wikimedia.org* (or
+   `thumb.wikimedia.org`); *Save a copy* converts it.
+7. ⌘V a snippet onto the canvas with nothing selected → dialog opens pre-filled. ⌘V inside
+   a text box → normal paste.
+8. *Export .html* with one linked and one copied image → both show online; with the network
+   off only the copied one shows.
+9. A non-Wikimedia image URL from a site without CORS → linking works; copying reports
+   *This site doesn't allow copying — add it as a link instead.*
