@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Camera, Size } from "../camera/camera";
 import { frameToCamera } from "../camera/camera";
 import { resolveFrameRect } from "../playback/holds";
-import { animateCamera } from "../playback/engine";
+import { animateCamera, type CameraAnim } from "../playback/engine";
 import { worldBounds } from "../playback/engine";
 import { prefersReducedMotion } from "../playback/useCameraTo";
 import { openChannel } from "../playback/sync";
@@ -31,7 +31,9 @@ export function Player() {
     frames[0] ? frameToCamera(resolveFrameRect(frames, 0)!, viewport) : { cx: 0, cy: 0, scale: 1, rotation: 0 }
   );
   const [cam, setCam] = useState<Camera>(camRef.current);
-  const animRef = useRef<{ stop: () => void } | null>(null);
+  const animRef = useRef<CameraAnim | null>(null);
+  const moveToken = useRef(0);
+  const [moving, setMoving] = useState(false);
   const channel = useRef<BroadcastChannel | null>(null);
 
   useEffect(() => {
@@ -54,7 +56,13 @@ export function Player() {
   const moveTo = useCallback(
     (target: Camera, easing: typeof frames[number]["easing"], duration: number | "auto") => {
       animRef.current?.stop();
+      const token = ++moveToken.current;
+      setMoving(true);
       animRef.current = animateCamera(camRef.current, target, viewport, easing, duration, apply, prefersReducedMotion());
+      // stop() also resolves `finished`, so only the latest move may clear the flag.
+      animRef.current.finished.then(() => {
+        if (moveToken.current === token) setMoving(false);
+      });
     },
     [viewport, apply]
   );
@@ -141,7 +149,7 @@ export function Player() {
   return (
     <div className="player">
       <div className="progress" style={{ width: `${((index + 1) / frames.length) * 100}%` }} />
-      <Stage presentation={presentation} camera={cam} viewport={viewport} currentIndex={index} />
+      <Stage presentation={presentation} camera={cam} viewport={viewport} currentIndex={index} moving={moving} />
       <div className="player-hud">
         <button onClick={() => goTo(index - 1)}>‹ Prev</button>
         <button onClick={() => goTo(index + 1)}>Next ›</button>

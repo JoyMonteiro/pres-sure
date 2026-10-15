@@ -13,12 +13,15 @@ export function Stage({
   viewport,
   currentIndex,
   animate = true,
+  moving = false,
 }: {
   presentation: Presentation;
   camera: Camera;
   viewport: Size;
   currentIndex: number;
   animate?: boolean;
+  /** Camera in flight: hint will-change for smooth motion, and drop it at rest so zooms re-rasterise sharply. */
+  moving?: boolean;
 }) {
   const els = [...presentation.elements].sort((a, b) => a.z - b.z);
   const order = enterOrder(els, presentation.frames, currentIndex);
@@ -27,7 +30,7 @@ export function Stage({
       className="viewport"
       style={{ width: viewport.width, height: viewport.height, background: presentation.world.backgroundColor }}
     >
-      <div className="world" style={{ transform: cameraToTransform(camera, viewport) }}>
+      <div className="world" style={{ transform: cameraToTransform(camera, viewport), willChange: moving ? "transform" : "auto" }}>
         {animate ? (
           <AnimatePresence>
             {els.map((el) => {

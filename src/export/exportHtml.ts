@@ -22,7 +22,7 @@ export function buildHtml(p: Presentation): string {
 <style>
   html,body{margin:0;height:100%;overflow:hidden;background:${p.world.backgroundColor};font-family:${SYSTEM_FONTS};}
   #stage{position:fixed;inset:0;overflow:hidden;cursor:pointer;}
-  #world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform;}
+  #world{position:absolute;left:0;top:0;transform-origin:0 0;}
   #progress{position:fixed;top:0;left:0;height:3px;width:0;background:#6d8bff;z-index:10;transition:width .2s;}
   #hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#888;font-size:12px;z-index:10;opacity:.5;}
 </style>

@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { runtimeScript } from "./runtime";
 import { frameHashes } from "./deepLink";
+import { buildHtml } from "./exportHtml";
 
 // Runs the exported player against just enough of a fake DOM to watch its URL handling.
-function boot(titles: string[], hash: string) {
+function boot(titles: string[], hash: string, { easing = "cut", reduced = true } = {}) {
   const frames = titles.map((title, i) => ({
     id: `f${i}`, title, x: i * 1000, y: 0, w: 1000, h: 500, rotation: 0,
-    duration: 0, easing: "cut", notes: "",
+    duration: easing === "cut" ? 0 : 500, easing, notes: "",
   }));
   const node = () => ({
     style: {} as Record<string, string>,
@@ -21,7 +22,7 @@ function boot(titles: string[], hash: string) {
   const window = {
     __PRES__: { frames, elements: [] },
     innerWidth: 1000, innerHeight: 500,
-    matchMedia: () => ({ matches: true }),
+    matchMedia: () => ({ matches: reduced }),
     addEventListener: (type: string, fn: () => void) => { listeners[type] = fn; },
   };
   const document = {
@@ -32,9 +33,15 @@ function boot(titles: string[], hash: string) {
   const history = {
     replaceState: (_s: unknown, _t: string, url: string) => { location.hash = url; },
   };
-  new Function("window", "document", "history", "location", runtimeScript())(
-    window, document, history, location,
-  );
+  // Animation frames are queued, not run, so a test can look at the camera mid-flight.
+  let queued: ((now: number) => void)[] = [];
+  const requestAnimationFrame = (fn: (now: number) => void) => queued.push(fn);
+  const cancelAnimationFrame = () => { queued = []; };
+  new Function(
+    "window", "document", "history", "location", "requestAnimationFrame", "cancelAnimationFrame",
+    runtimeScript(),
+  )(window, document, history, location, requestAnimationFrame, cancelAnimationFrame);
+  const flush = (now: number) => { const q = queued; queued = []; q.forEach((fn) => fn(now)); };
   return {
     location,
     /** Camera x-centre, which identifies the frame on screen (frames sit 1000px apart). */
@@ -44,6 +51,9 @@ function boot(titles: string[], hash: string) {
     },
     key: (key: string) => keys.forEach((fn) => fn({ key, preventDefault() {} })),
     navigate: (h: string) => { location.hash = h; listeners.hashchange(); },
+    world: els.world,
+    /** Run queued frames until the camera lands (each frame jumps far past any duration). */
+    settle: () => { for (let i = 0; i < 10 && queued.length; i++) flush(performance.now() + 1e6); },
   };
 }
 
@@ -74,5 +84,32 @@ describe("export runtime deep links", () => {
     const deck = boot(titles, "");
     deck.navigate("#l2-isotherms");
     expect(deck.frame()).toBe(1);
+  });
+});
+
+// A permanent will-change:transform makes Chrome keep the raster scale it first painted at,
+// so a deep zoom stays blurry. The hint may only be present while the camera is moving.
+describe("export runtime rasterisation", () => {
+  it("hints will-change only while the camera moves", () => {
+    const deck = boot(titles, "", { easing: "smooth", reduced: false });
+    expect(deck.world.style.willChange).not.toBe("transform");
+    deck.key("ArrowRight");
+    expect(deck.world.style.willChange).toBe("transform");
+    deck.settle();
+    expect(deck.frame()).toBe(1);
+    expect(deck.world.style.willChange).toBe("auto");
+  });
+  it("never hints will-change on a cut", () => {
+    const deck = boot(titles, "");
+    deck.key("ArrowRight");
+    expect(deck.world.style.willChange).not.toBe("transform");
+  });
+  it("does not pin a raster scale on elements or in the page CSS", () => {
+    expect(runtimeScript()).not.toMatch(/willChange='opacity/);
+    const deck = {
+      id: "p", title: "t", createdAt: 0, updatedAt: 0, world: { backgroundColor: "#fff" },
+      elements: [], frames: [], settings: { defaultEasing: "smooth" as const, defaultDuration: "auto" as const },
+    };
+    expect(buildHtml(deck).split("<script>")[0]).not.toMatch(/will-change/);
   });
 });

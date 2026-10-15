@@ -19,7 +19,7 @@ export function runtimeScript(): string {
   elements.forEach(function(el){
     var d = document.createElement('div');
     d.style.position='absolute'; d.style.left=el.x+'px'; d.style.top=el.y+'px';
-    d.style.width=el.w+'px'; d.style.height=el.h+'px'; d.style.willChange='opacity,transform';
+    d.style.width=el.w+'px'; d.style.height=el.h+'px';
     var inner = document.createElement('div');
     inner.style.width='100%'; inner.style.height='100%';
     inner.style.transform='rotate('+el.rotation+'deg)';
@@ -75,12 +75,14 @@ export function runtimeScript(): string {
     var prof=EASE[easing]||EASE.smooth;
     var durMs = duration==='auto' ? Math.max(350,Math.min(2600,700*(0.4+p.S))) : duration;
     durMs *= prof.k||1;
-    if(reduced||easing==='cut'||durMs<=0){ curCam=target; applyCam(target); return; }
+    // will-change only while moving: left on, Chrome keeps the first raster scale and deep zooms blur.
+    if(reduced||easing==='cut'||durMs<=0){ curCam=target; applyCam(target); world.style.willChange='auto'; return; }
+    world.style.willChange='transform';
     var t0=performance.now();
     (function step(now){
       var t=Math.min(1,(now-t0)/durMs); var et=prof.e?prof.e(t):t;
       var c=p.at(et); applyCam(c);
-      if(t<1){ raf=requestAnimationFrame(step); } else { curCam=target; }
+      if(t<1){ raf=requestAnimationFrame(step); } else { curCam=target; world.style.willChange='auto'; }
     })(t0);
   }
 

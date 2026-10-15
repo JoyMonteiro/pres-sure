@@ -72,7 +72,9 @@ label { color: var(--muted); font-size: 12px; }
 /* ---- Canvas / world ---- */
 .viewport { position: absolute; inset: 0; overflow: hidden; cursor: grab; }
 .viewport.panning { cursor: grabbing; }
-.world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+/* No static will-change: Chrome would keep the first raster scale and zoomed content would blur.
+   The player sets it only while the camera moves (Stage `moving`). */
+.world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .element { position: absolute; }
 .element .content { width: 100%; height: 100%; }
 .element img { width: 100%; height: 100%; display: block; pointer-events: none; }
