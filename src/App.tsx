@@ -37,8 +37,10 @@ function Editor() {
     });
   }, [loadPresentation]);
 
-  // Global edit-mode shortcuts.
+  // Global edit-mode shortcuts. Off while the web-image dialog is open (it handles its own
+  // Escape), so undo or Delete can't change the canvas hidden behind it.
   useEffect(() => {
+    if (webDialog !== null) return;
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       const typing = t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable;
@@ -61,7 +63,7 @@ function Editor() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [webDialog]);
 
   // Pasting an image link or Commons snippet onto the canvas opens the web-image dialog.
   useEffect(() => {
