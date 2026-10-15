@@ -1,7 +1,9 @@
 // Deep links into an exported deck: `deck.html#l3-keeling-curve` or `deck.html#12`.
 // A frame's hash is its title slug, or its 1-based number when the slug is empty, already
 // taken by an earlier frame, or all digits (which would read as a frame number).
-// Shared mental model with the export runtime (which re-implements it in plain JS).
+// The reference implementation: runtime.ts re-implements it in plain JS for the exported
+// file (which is emitted as a string and so cannot import), and the tests pin both to the
+// same hashes.
 
 export function titleSlug(title: string): string {
   return title

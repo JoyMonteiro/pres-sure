@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runtimeScript } from "./runtime";
-import { frameHashes } from "../playback/deepLink";
+import { frameHashes } from "./deepLink";
 
 // Runs the exported player against just enough of a fake DOM to watch its URL handling.
 function boot(titles: string[], hash: string) {
