@@ -6,12 +6,18 @@ import { temporal } from "zundo";
 import { immer } from "zustand/middleware/immer";
 import type { Camera, Size } from "../camera/camera";
 import { boundingBox, cameraToFrameRect, frameToCamera } from "../camera/camera";
-import type { Element, ElementType, Frame, Presentation } from "../types";
+import type { Element, ElementType, Frame, Presentation, WebImagesMode } from "../types";
 import { makeElement, makeFrame, makeHold, makePresentation } from "./factory";
 import { holdGroups, isHold, planReveal } from "../playback/holds";
 import { debounce, saveLocal } from "./persistence";
 
 export type Mode = "edit" | "play";
+
+export interface NewElement {
+  type: ElementType;
+  content: string;
+  extra?: Partial<Element>;
+}
 
 export interface Guide {
   axis: "x" | "y";
@@ -41,8 +47,12 @@ interface AppState {
   loadPresentation: (p: Presentation) => void;
   setTitle: (t: string) => void;
   setBackground: (color: string) => void;
+  /** Remember link-or-copy for "+ From web". No-op (and no history entry) if unchanged. */
+  setWebImagesDefault: (mode: WebImagesMode) => void;
 
   addElement: (type: ElementType, content: string, extra?: Partial<Element>) => string;
+  /** Add several elements as ONE undo step; selects the first. Returns ids in order. */
+  addElements: (items: NewElement[]) => string[];
   updateElement: (id: string, patch: Partial<Element>) => void;
   removeElement: (id: string) => void;
   bringForward: (id: string) => void;
@@ -109,6 +119,13 @@ export const useStore = create<AppState>()(
           touch(st.presentation);
         }),
 
+      setWebImagesDefault: (mode) =>
+        set((st) => {
+          if ((st.presentation.settings.webImages ?? "link") === mode) return;
+          st.presentation.settings.webImages = mode;
+          touch(st.presentation);
+        }),
+
       addElement: (type, content, extra) => {
         const el = makeElement(type, { content, ...extra });
         set((st) => {
@@ -121,6 +138,22 @@ export const useStore = create<AppState>()(
           touch(st.presentation);
         });
         return el.id;
+      },
+
+      addElements: (items) => {
+        const els = items.map((it) => makeElement(it.type, { content: it.content, ...it.extra }));
+        set((st) => {
+          let z = nextZ(st.presentation.elements);
+          els.forEach((el, i) => {
+            el.z = z++;
+            if (items[i].extra?.x === undefined) el.x = st.editorCamera.cx - el.w / 2;
+            if (items[i].extra?.y === undefined) el.y = st.editorCamera.cy - el.h / 2;
+            st.presentation.elements.push(el);
+          });
+          if (els.length) st.selectedIds = [els[0].id];
+          touch(st.presentation);
+        });
+        return els.map((el) => el.id);
       },
 
       updateElement: (id, patch) =>
