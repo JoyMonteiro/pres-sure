@@ -90,7 +90,10 @@ Verified on 2026-10-14 against live responses:
 - `thumbwidth`/`thumbheight` echo the *request*, not the file served (`File:Example.jpg` is
   172×178 but reports `thumbwidth: 2560`; a 6780px original asked for 2560 reports 2560
   while serving 3840). They are never used.
-- A missing file comes back as `pages[0].missing: true` with no `imageinfo`.
+- A missing file comes back as `pages[0].missing: true` with no `imageinfo`. **But** a
+  Commons file asked of a Wikipedia also says `missing: true` (no local description page)
+  while carrying full `imageinfo` and `imagerepository: "shared"`. So a file is missing
+  only when `imageinfo` is absent.
 - `title` may be sent with underscores or spaces; the API normalises it.
 
 ### D4 — Which URL is used.
@@ -111,10 +114,13 @@ from `width`/`height`. SVG gets no `naturalW`/`naturalH`, which matches uploaded
 
 - From a pasted **snippet**: the `<a title="…">` text, verbatim after entity decoding.
   Commons writes it in the form *Artist, Licence, via Wikimedia Commons*.
-- From a **URL**: built in the same form from `extmetadata`. `Artist.value` is HTML — tags
-  are stripped, entities decoded, whitespace collapsed. `LicenseShortName.value` is used
-  as-is. Missing parts are dropped: *Artist, via Wikimedia Commons*, *Licence, via
-  Wikimedia Commons*, or just *via Wikimedia Commons*.
+- From a **URL**: built in the same form from `extmetadata`. `Artist.value` and
+  `LicenseShortName.value` are HTML — tags are stripped, entities decoded, whitespace
+  collapsed. The source is *via Wikimedia Commons* when the wiki is Commons or the page's
+  `imagerepository` is `"shared"`, otherwise *via Wikipedia* (a file hosted on that
+  Wikipedia itself). Missing parts are dropped: *Artist, via …*, *Licence, via …*, or just
+  *via …*. (Commons' `Artist` for `File:Example.jpg` is only an icon and reduces to
+  nothing.)
 - **Other** web images have no credit and get no caption.
 
 ### D6 — The caption is an ordinary text element. *(User choice: option 1)*
@@ -198,20 +204,32 @@ export interface ResolvedImage {
 
 export function apiUrl(wiki: string, title: string): string;
 export function stripTracking(url: string): string;
+export type ProbeSize = (url: string) => Promise<{ width: number; height: number }>;
+
+export function buildCredit(info: ImageInfo, viaCommons: boolean): string;
 export function resolveWikimedia(
   input: Extract<ImageInput, { kind: "wikimedia" }>,
   fetchJson: FetchJson
 ): Promise<ResolvedImage>;   // throws Error with a user-facing message
-export function probeWebImage(url: string): Promise<ResolvedImage>;  // DOM Image(); not unit-tested
+export function resolveInput(
+  input: ImageInput,
+  deps: { fetchJson: FetchJson; probeSize: ProbeSize }
+): Promise<ResolvedImage>;   // the dialog's single entry point
 export function typeFromPath(url: string): ElementType;
 ```
+
+`resolveInput` rejects `invalid` with its message, resolves `wikimedia` through
+`resolveWikimedia` (then measures the image with `probeSize` when `aspect` is null — the
+low-res fallback), and measures `web` images with `probeSize`. A probe that reports 0×0
+(some SVGs) gives `aspect: null`. The browser implementations of `fetchJson` and
+`probeSize` (an `Image()` load) live in `src/remote/browser.ts`, the only untested file.
 
 `resolveWikimedia` error handling:
 
 | Case | Result |
 |---|---|
-| `missing: true` | throw *"Wikimedia has no file called <title>."* |
-| network / non-JSON failure, `fallbackSrc` present | resolve with `fallbackSrc`, `lowRes: true`, `credit` from the snippet, `aspect: null` |
+| no `imageinfo` and `missing`/`invalid` | throw *"Wikimedia has no file called <title>."* |
+| network / non-JSON / malformed response, `fallbackSrc` present | resolve with `fallbackSrc` (tracking stripped), `lowRes: true`, `credit` from the snippet, `aspect: null` |
 | network / non-JSON failure, no fallback | throw *"Couldn't reach Wikimedia — check your connection."* |
 
 ### `src/remote/layoutWebImage.ts` (new, pure)
@@ -240,8 +258,9 @@ switched to `blobToDataUrl` so there is one copy of the FileReader code.
 
 `copyRemoteImage(url: string): Promise<string>` — `fetch(url)`, `!ok` or a thrown
 `TypeError` (CORS / offline) → throw *"This site doesn't allow copying — add it as a link
-instead."*. Otherwise `storeImageBlob(blob, nameHintFromUrl(url))`, where the hint is the
-URL path's last segment, percent-decoded.
+instead."*. A response whose type is not `image/*` → *"That address didn't return an
+image."* Otherwise `storeImageBlob(blob, nameHintFromUrl(url))`, where the hint is the URL
+path's last segment, percent-decoded (`"image"` if there is none).
 
 ### Store (`store/store.ts`, `types.ts`)
 
