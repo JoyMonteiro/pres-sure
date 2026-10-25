@@ -44,6 +44,12 @@ export interface Element {
   naturalH?: number;
   textStyle?: TextStyle;
   lifecycle: Lifecycle;
+  /**
+   * The scene node this element lives in; its x/y/w/h are in that node's local units.
+   * Absent means "directly in the world" — never write a default node id into stored
+   * data, so old saves stay loadable without migration.
+   */
+  nodeId?: string;
 }
 
 /** Named transition "feels" — map to a curve or a spring (§4.4). */
@@ -71,6 +77,41 @@ export interface Frame {
    * saves stay loadable without migration.
    */
   kind?: FrameKind;
+  /**
+   * The scene node this frame's camera rect is expressed in. Absent means the rect is
+   * already in world units — never write a default node id into stored data, so old
+   * saves stay loadable without migration.
+   */
+  nodeId?: string;
+}
+
+/** A named rung of the scale ladder — an author-facing level like "slide" or "world". */
+export interface Rung {
+  id: string;
+  name: string;
+}
+
+/**
+ * A placed scale: a node offsets and scales its contents inside its parent, so content
+ * can be authored in comfortable local units at any depth.
+ */
+export interface SceneNode {
+  id: string;
+  /** null = parented straight to the world. */
+  parentId: string | null;
+  rungId: string;
+  /** Offset within the parent, in the parent's local units. */
+  x: number;
+  y: number;
+  /** Size of one local unit in the parent's units. */
+  scale: number;
+}
+
+/** A resolved node-to-world transform: world = local * s + offset. */
+export interface NodeTransform {
+  ox: number;
+  oy: number;
+  s: number;
 }
 
 export interface WorldSettings {
@@ -91,4 +132,11 @@ export interface Presentation {
   elements: Element[];
   frames: Frame[];
   settings: PresentationSettings;
+  /**
+   * The scale ladder. Absent on presentations authored before the ladder existed —
+   * never write an empty array into stored data, so old saves load without migration.
+   */
+  rungs?: Rung[];
+  /** The scene node tree. Absent for the same reason as `rungs`. */
+  nodes?: SceneNode[];
 }
