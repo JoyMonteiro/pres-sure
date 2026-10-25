@@ -8,7 +8,7 @@ export const IDENTITY_TRANSFORM: NodeTransform = { ox: 0, oy: 0, s: 1 };
  * the parent links form a cycle. The visited set is the cycle guard: a well-formed
  * chain visits each node at most once, so a repeat means the links loop.
  */
-export function ancestorChain(
+export function nodeChain(
   nodes: SceneNode[],
   nodeId: string | null | undefined
 ): SceneNode[] | null {
@@ -37,7 +37,7 @@ export function resolveTransform(
   nodes: SceneNode[],
   nodeId: string | null | undefined
 ): NodeTransform {
-  const chain = ancestorChain(nodes, nodeId);
+  const chain = nodeChain(nodes, nodeId);
   if (!chain) return { ...IDENTITY_TRANSFORM };
   let { ox, oy, s } = IDENTITY_TRANSFORM;
   for (const node of chain) {

@@ -148,7 +148,7 @@ git commit -m "feat: scene node transform resolution"
 - Consumes: `SceneNode`, `Rung` from Task 1.
 - Produces: `ancestorChain(nodes: SceneNode[], nodeId: string | null | undefined): SceneNode[]` (root-first, inclusive of `nodeId`, `[]` for root/unknown/cyclic); `childrenOf(nodes: SceneNode[], nodeId: string | null): SceneNode[]`; `descendantIds(nodes: SceneNode[], nodeId: string): string[]` (excludes `nodeId` itself); `unusedRungs(pres: Presentation): Rung[]` — rungs with no node, or whose every node holds no element and no frame.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 test("ancestorChain is root-first and inclusive", () => {
@@ -197,19 +197,19 @@ test("unusedRungs reports a rung whose nodes are empty", () => {
 
 Write local `n`, `r`, `node`, `elAt`, `presWith` helpers in the test file.
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npx vitest run src/nodes/tree.test.ts` → FAIL (module missing)
 
-- [ ] **Step 3: Implement `src/nodes/tree.ts`**
+- [x] **Step 3: Implement `src/nodes/tree.ts`**
 
 All four functions are plain traversals over the flat array; reuse Task 1's cycle guard rather than writing a second one (export it from `transform.ts` if needed). `unusedRungs` treats absent `rungs`/`nodes` as empty.
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `npx vitest run src/nodes/tree.test.ts` → PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/nodes/tree.ts src/nodes/tree.test.ts
