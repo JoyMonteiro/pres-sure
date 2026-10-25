@@ -49,7 +49,7 @@ Five things the spec implies that no task's own tests would otherwise exercise. 
 - Consumes: nothing.
 - Produces: `interface Rung { id: string; name: string }`; `interface SceneNode { id: string; parentId: string | null; rungId: string; x: number; y: number; scale: number }`; `interface NodeTransform { ox: number; oy: number; s: number }`; `resolveTransform(nodes: SceneNode[], nodeId: string | null | undefined): NodeTransform`; `worldRect(el: Element, nodes: SceneNode[]): { x: number; y: number; w: number; h: number }`; `worldToLocal(pt: { x: number; y: number }, t: NodeTransform): { x: number; y: number }`. On `Element` and `Frame`: `nodeId?: string`. On `Presentation`: `rungs?: Rung[]`, `nodes?: SceneNode[]`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 const IDENT = { ox: 0, oy: 0, s: 1 };
@@ -111,25 +111,25 @@ test("worldToLocal inverts a transform", () => {
 
 Write a local `el()` helper in the test file returning a minimal `Element` (`makeElement("text", { content: "x" })` from `src/store/factory.ts`).
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `npx vitest run src/nodes/transform.test.ts`
 Expected: FAIL — `src/nodes/transform.ts` does not exist.
 
-- [ ] **Step 3: Add the model types to `src/types.ts`**
+- [x] **Step 3: Add the model types to `src/types.ts`**
 
 Add `Rung`, `SceneNode`, `NodeTransform`; add `nodeId?: string` to `Element` and `Frame`; add `rungs?: Rung[]` and `nodes?: SceneNode[]` to `Presentation`. Comment each optional field with why it is optional (old saves load without migration), matching the house style of `kind?: FrameKind`.
 
-- [ ] **Step 4: Implement `src/nodes/transform.ts`**
+- [x] **Step 4: Implement `src/nodes/transform.ts`**
 
 `resolveTransform` walks from the node to the root composing `ox += x * s_parent` and `s *= scale`. Guard cycles with a visited set bounded by `nodes.length`; on a cycle, an unknown id, or a nullish id, return identity. `worldRect` applies the element's node transform to its local rect; `worldToLocal` divides out `s` and subtracts the offset, returning the point unchanged when `s === 0`.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `npx vitest run src/nodes/transform.test.ts` → PASS
 Run: `npm run typecheck` → clean
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/types.ts src/nodes/transform.ts src/nodes/transform.test.ts
