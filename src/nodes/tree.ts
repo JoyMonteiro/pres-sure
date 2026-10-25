@@ -16,9 +16,14 @@ export function ancestorChain(
   return nodeChain(nodes, nodeId) ?? [];
 }
 
-/** The direct children of a node; `null` asks for the nodes parented straight to the world. */
+/**
+ * The direct children of a node; `null` asks for the nodes parented straight to the world.
+ * A self-parented node is excluded: `parentId === id` is reachable from a buggy reparent or
+ * hand-edited JSON, and returning it as its own child would make any recursive walk over
+ * this function — the nesting of render layers, for one — fail to terminate.
+ */
 export function childrenOf(nodes: SceneNode[], nodeId: string | null): SceneNode[] {
-  return nodes.filter((node) => node.parentId === nodeId);
+  return nodes.filter((node) => node.parentId === nodeId && node.id !== nodeId);
 }
 
 /**

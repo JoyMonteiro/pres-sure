@@ -34,6 +34,13 @@ describe("childrenOf", () => {
     expect(childrenOf(nodes, null).map((c) => c.id)).toEqual(["w", "x"]);
   });
 
+  test("a self-parented node is not its own child", () => {
+    // a buggy reparent or hand-edited JSON can write parentId === id; returning the node
+    // as its own child makes any recursive walk over childrenOf non-terminating.
+    const nodes = [n("a", "a"), n("b", "a")];
+    expect(childrenOf(nodes, "a").map((c) => c.id)).toEqual(["b"]);
+  });
+
   test("childrenOf returns only direct children", () => {
     const nodes = [n("w", null), n("i", "w"), n("s", "i")];
     expect(childrenOf(nodes, "w").map((c) => c.id)).toEqual(["i"]);
