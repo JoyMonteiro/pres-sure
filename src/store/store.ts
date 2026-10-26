@@ -6,8 +6,10 @@ import { temporal } from "zundo";
 import { immer } from "zustand/middleware/immer";
 import type { Camera, Size } from "../camera/camera";
 import { boundingBox, cameraToFrameRect, frameToCamera } from "../camera/camera";
-import type { Element, ElementType, Frame, Presentation } from "../types";
-import { makeElement, makeFrame, makeHold, makePresentation } from "./factory";
+import type { Element, ElementType, Frame, Presentation, SceneNode } from "../types";
+import { makeElement, makeFrame, makeHold, makeNode, makePresentation, makeRung } from "./factory";
+import { resolveTransform, worldRect, worldToLocal } from "../nodes/transform";
+import { childrenOf, descendantIds } from "../nodes/tree";
 import { holdGroups, isHold, planReveal } from "../playback/holds";
 import { debounce, saveLocal } from "./persistence";
 
@@ -26,6 +28,8 @@ interface AppState {
   viewport: Size;
   mode: Mode;
   guides: Guide[];
+  /** The node the author is working inside; null = the world. Transient, like selection. */
+  currentNodeId: string | null;
 
   // --- transient setters (not history-tracked) ---
   setViewport: (s: Size) => void;
@@ -36,6 +40,7 @@ interface AppState {
   toggleSelect: (id: string) => void;
   setCurrentFrame: (id: string | null) => void;
   setGuides: (g: Guide[]) => void;
+  setCurrentNode: (id: string | null) => void;
 
   // --- presentation mutations (history-tracked) ---
   loadPresentation: (p: Presentation) => void;
@@ -58,6 +63,18 @@ interface AppState {
   moveFrameGroup: (from: number, to: number) => void;
   addHoldStep: (shotId: string) => void;
   revealOneAtATime: () => void;
+
+  addRung: (name: string) => string;
+  renameRung: (id: string, name: string) => void;
+  removeRung: (id: string) => void;
+  addNode: (partial: Partial<SceneNode> & Pick<SceneNode, "rungId">) => string;
+  updateNode: (id: string, patch: Partial<SceneNode>) => void;
+  /**
+   * promote: the node goes, its children and elements stay where they look, reparented to
+   * its parent. cascade: the node, everything beneath it, and their elements all go.
+   */
+  removeNode: (id: string, mode: "promote" | "cascade") => void;
+  moveElementToNode: (elementId: string, nodeId: string | null) => void;
 }
 
 const touch = (p: Presentation) => {
@@ -76,6 +93,7 @@ export const useStore = create<AppState>()(
       viewport: { width: 1280, height: 720 },
       mode: "edit",
       guides: [],
+      currentNodeId: null,
 
       setGuides: (g) => set((st) => void (st.guides = g)),
       setViewport: (s) => set((st) => void (st.viewport = s)),
@@ -89,12 +107,14 @@ export const useStore = create<AppState>()(
           else st.selectedIds.push(id); // append: selection order is the reveal order
         }),
       setCurrentFrame: (id) => set((st) => void (st.currentFrameId = id)),
+      setCurrentNode: (id) => set((st) => void (st.currentNodeId = id)),
 
       loadPresentation: (p) =>
         set((st) => {
           st.presentation = p;
           st.selectedIds = [];
           st.currentFrameId = p.frames[0]?.id ?? null;
+          st.currentNodeId = null;
         }),
 
       setTitle: (t) =>
@@ -310,6 +330,148 @@ export const useStore = create<AppState>()(
           // ordering a drag can produce that separates them.
           st.presentation.frames = groups.flatMap((g) => [g.shot, ...g.holds]);
           touch(st.presentation);
+        }),
+
+      // --- the scale ladder (§2.3) ---
+      // `rungs` and `nodes` are absent on decks authored before the ladder existed, so
+      // adding the first one creates the array and removing the last takes it away again:
+      // a deck that never had a ladder and one whose ladder was emptied must save the same.
+
+      addRung: (name) => {
+        const rung = makeRung(name);
+        set((st) => {
+          (st.presentation.rungs ??= []).push(rung);
+          touch(st.presentation);
+        });
+        return rung.id;
+      },
+
+      renameRung: (id, name) =>
+        set((st) => {
+          const rung = st.presentation.rungs?.find((r) => r.id === id);
+          if (!rung) return;
+          rung.name = name;
+          touch(st.presentation);
+        }),
+
+      removeRung: (id) =>
+        set((st) => {
+          const rungs = st.presentation.rungs;
+          if (!rungs?.some((r) => r.id === id)) return;
+          const left = rungs.filter((r) => r.id !== id);
+          if (left.length) st.presentation.rungs = left;
+          else delete st.presentation.rungs;
+          // The places outlive the label: a node whose rung is gone keeps its id, its
+          // parent and its scale, and simply no longer names a scale on the ladder.
+          st.presentation.nodes?.forEach((n) => {
+            if (n.rungId === id) n.rungId = "";
+          });
+          touch(st.presentation);
+        }),
+
+      addNode: (partial) => {
+        const node = makeNode(partial);
+        set((st) => {
+          (st.presentation.nodes ??= []).push(node);
+          touch(st.presentation);
+        });
+        return node.id;
+      },
+
+      updateNode: (id, patch) =>
+        set((st) => {
+          const node = st.presentation.nodes?.find((n) => n.id === id);
+          if (!node) return;
+          Object.assign(node, patch);
+          touch(st.presentation);
+        }),
+
+      removeNode: (id, mode) =>
+        set((st) => {
+          const pres = st.presentation;
+          const all = pres.nodes ?? [];
+          const victim = all.find((n) => n.id === id);
+          if (!victim) return;
+          // Read the vanishing node's placement before anything is rewritten.
+          const { x: vx, y: vy, scale: vs, parentId: parent } = victim;
+
+          if (mode === "promote") {
+            // The node's local units disappear with it, so everything expressed in them
+            // is converted into the parent's: a child's offset and scale, and an
+            // element's rect and font size. Nothing may move on screen.
+            for (const child of childrenOf(all, id)) {
+              child.x = vx + child.x * vs;
+              child.y = vy + child.y * vs;
+              child.scale *= vs;
+              child.parentId = parent;
+            }
+            for (const el of pres.elements) {
+              if (el.nodeId !== id) continue;
+              el.x = vx + el.x * vs;
+              el.y = vy + el.y * vs;
+              el.w *= vs;
+              el.h *= vs;
+              if (el.textStyle) el.textStyle.fontSize *= vs;
+              if (parent) el.nodeId = parent;
+              else delete el.nodeId;
+            }
+          }
+
+          const gone = new Set(mode === "cascade" ? [id, ...descendantIds(all, id)] : [id]);
+
+          if (mode === "cascade") {
+            const doomedEls = pres.elements.filter((e) => e.nodeId && gone.has(e.nodeId));
+            const doomedIds = new Set(doomedEls.map((e) => e.id));
+            pres.elements = pres.elements.filter((e) => !doomedIds.has(e.id));
+            st.selectedIds = st.selectedIds.filter((sid) => !doomedIds.has(sid));
+          }
+
+          // A frame keeps its geometry and loses only its label. Frame rects are world
+          // space (see captureFrame), so an unlabelled frame points exactly where it did;
+          // deleting the author's shots because a node went away is data loss nothing
+          // asked for, and relabelling to the parent is the one option that could move a
+          // camera if that world-space reading ever changes.
+          for (const f of pres.frames) if (f.nodeId && gone.has(f.nodeId)) delete f.nodeId;
+
+          const left = all.filter((n) => !gone.has(n.id));
+          if (left.length) pres.nodes = left;
+          else delete pres.nodes;
+
+          // Working inside a node that no longer exists would leave the author editing a
+          // scale with no place on the tree, so fall back to where the node hung.
+          if (st.currentNodeId && gone.has(st.currentNodeId)) st.currentNodeId = parent;
+
+          touch(pres);
+        }),
+
+      moveElementToNode: (elementId, nodeId) =>
+        set((st) => {
+          const pres = st.presentation;
+          const el = pres.elements.find((e) => e.id === elementId);
+          if (!el) return;
+          const all = pres.nodes ?? [];
+          if (nodeId && !all.some((n) => n.id === nodeId)) return;
+
+          // Re-express the element in the destination's units via its world rect, so the
+          // element stays exactly where it is and only its numbers change.
+          const world = worldRect(el, all);
+          const fontWorld = el.textStyle
+            ? el.textStyle.fontSize * resolveTransform(all, el.nodeId).s
+            : 0;
+          const t = resolveTransform(all, nodeId);
+          const local = worldToLocal({ x: world.x, y: world.y }, t);
+          el.x = local.x;
+          el.y = local.y;
+          // A zero-scale destination has no units to divide by; leave the size alone
+          // rather than writing Infinity into stored data.
+          if (t.s !== 0) {
+            el.w = world.w / t.s;
+            el.h = world.h / t.s;
+            if (el.textStyle) el.textStyle.fontSize = fontWorld / t.s;
+          }
+          if (nodeId) el.nodeId = nodeId;
+          else delete el.nodeId;
+          touch(pres);
         }),
     })),
     {

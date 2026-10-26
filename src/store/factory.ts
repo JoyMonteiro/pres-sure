@@ -4,6 +4,8 @@ import type {
   ElementType,
   Frame,
   Presentation,
+  Rung,
+  SceneNode,
   TextStyle,
 } from "../types";
 
@@ -58,6 +60,30 @@ export function makeHold(partial: Partial<Frame> = {}): Frame {
     kind: "hold",
     easing: "cut",
     duration: 0,
+  };
+}
+
+
+/** A named rung of the scale ladder. */
+export function makeRung(name: string): Rung {
+  return { id: uid("rung"), name };
+}
+
+/**
+ * A placed scale, defaulting to the world at 1:1. `parentId` is written explicitly as
+ * null even when the caller passes undefined: `childrenOf` finds the world's children by
+ * `parentId === null`, so anything else would hide the node from the root walk.
+ */
+export function makeNode(
+  partial: Partial<SceneNode> & Pick<SceneNode, "rungId">
+): SceneNode {
+  return {
+    id: uid("node"),
+    x: 0,
+    y: 0,
+    scale: 1,
+    ...partial,
+    parentId: partial.parentId ?? null,
   };
 }
 
