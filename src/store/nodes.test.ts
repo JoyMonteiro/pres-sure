@@ -158,6 +158,22 @@ describe("removeNode in promote mode", () => {
     expect(worldRect(elById(el.id), nodes())).toEqual(before);
   });
 
+  test("out of a self-parented node, reparents its children to the world", () => {
+    // A self-parent is reachable from a buggy reparent (nothing rejects it) and from
+    // hand-edited JSON. Folding into `parentId` unchecked would leave the child parented
+    // to the very node being deleted — an orphan rendering at the root at full size.
+    load({ nodes: [node("w", "w", 5, 7, 3), node("c", "w", 1, 1, 2)] });
+    st().removeNode("w", "promote");
+    expect(nodeById("c").parentId).toBeNull();
+  });
+
+  test("out of a node whose parent is missing, leaves no element pointing at the deleted node", () => {
+    const el = makeElement("image", { content: "x", nodeId: "w", x: 1, y: 1, w: 4, h: 2 });
+    load({ nodes: [node("w", "ghost", 5, 7, 3)], elements: [el] });
+    st().removeNode("w", "promote");
+    expect("nodeId" in elById(el.id)).toBe(false);
+  });
+
   test("is a single undo entry", () => {
     load({ nodes: ladder() });
     st().removeNode("i", "promote");

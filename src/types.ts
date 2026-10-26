@@ -78,9 +78,10 @@ export interface Frame {
    */
   kind?: FrameKind;
   /**
-   * The scene node this frame's camera rect is expressed in. Absent means the rect is
-   * already in world units — never write a default node id into stored data, so old
-   * saves stay loadable without migration.
+   * The scene node this frame was taken at. Provenance only: x/y/w/h are always in world
+   * units, because the camera is global and a frame that moved with its node would break
+   * every hold that resolves to it. Absent means it was taken at the world — never write
+   * a default node id into stored data, so old saves stay loadable without migration.
    */
   nodeId?: string;
 }

@@ -393,7 +393,15 @@ export const useStore = create<AppState>()(
           const victim = all.find((n) => n.id === id);
           if (!victim) return;
           // Read the vanishing node's placement before anything is rewritten.
-          const { x: vx, y: vy, scale: vs, parentId: parent } = victim;
+          const { x: vx, y: vy, scale: vs } = victim;
+          // A self-parent or a dangling parentId would otherwise be folded straight into
+          // the promoted children and elements, leaving them pointing at the node being
+          // deleted. Both resolve to identity already, exactly as the world does, so
+          // treating a parent that is not a live node as the world preserves every
+          // transform the fold exists to preserve.
+          const parent = all.some((n) => n.id === victim.parentId && n.id !== id)
+            ? victim.parentId
+            : null;
 
           if (mode === "promote") {
             // The node's local units disappear with it, so everything expressed in them
@@ -427,7 +435,8 @@ export const useStore = create<AppState>()(
           }
 
           // A frame keeps its geometry and loses only its label. Frame rects are world
-          // space (see captureFrame), so an unlabelled frame points exactly where it did;
+          // space (see Frame.nodeId in types.ts), so an unlabelled frame points exactly
+          // where it did;
           // deleting the author's shots because a node went away is data loss nothing
           // asked for, and relabelling to the parent is the one option that could move a
           // camera if that world-space reading ever changes.
