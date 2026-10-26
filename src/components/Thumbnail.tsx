@@ -1,6 +1,8 @@
 import type { Frame, Presentation } from "../types";
 import { visibilityAt } from "../playback/visibility";
 import { StaticElement } from "./ElementView";
+import { buildLayers } from "../nodes/layers";
+import { NodeLayer } from "./NodeLayer";
 
 const TW = 150;
 const TH = 78;
@@ -12,7 +14,7 @@ export function Thumbnail({ presentation, frame, index }: { presentation: Presen
   const contentH = frame.h * scale;
   const offsetX = (TW - contentW) / 2 - frame.x * scale;
   const offsetY = (TH - contentH) / 2 - frame.y * scale;
-  const els = [...presentation.elements].sort((a, b) => a.z - b.z);
+  const root = buildLayers(presentation.elements, presentation.nodes ?? []);
 
   return (
     <div className="frame-thumb" style={{ background: presentation.world.backgroundColor }}>
@@ -20,9 +22,12 @@ export function Thumbnail({ presentation, frame, index }: { presentation: Presen
         className="thumb-world"
         style={{ transform: `translate(${offsetX}px, ${offsetY}px) scale(${scale}) rotate(${-frame.rotation}deg)` }}
       >
-        {els.map((el) =>
-          visibilityAt(el, presentation.frames, index).visible ? <StaticElement key={el.id} el={el} /> : null
-        )}
+        <NodeLayer
+          layer={root}
+          render={(el) =>
+            visibilityAt(el, presentation.frames, index).visible ? <StaticElement key={el.id} el={el} /> : null
+          }
+        />
       </div>
     </div>
   );

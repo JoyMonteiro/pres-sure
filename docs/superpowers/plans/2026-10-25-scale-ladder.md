@@ -295,7 +295,7 @@ git commit -m "feat: rung and node mutations in the store"
 - Consumes: Tasks 1–2.
 - Produces: `interface Layer { node: SceneNode | null; elements: Element[]; children: Layer[] }`; `buildLayers(elements: Element[], nodes: SceneNode[]): Layer` (root layer, `node: null`); `layerTransform(node: SceneNode): string` (a CSS transform string). Component `<NodeLayer layer={...} render={(el) => ReactNode} />`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 test("buildLayers puts root-nodeId elements in the root layer", () => { /* elements with no nodeId */ });
@@ -325,24 +325,24 @@ test("a text element deep in the tree keeps its local fontSize", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npx vitest run src/nodes/layers.test.ts` → FAIL
 
-- [ ] **Step 3: Implement `src/nodes/layers.ts` and `NodeLayer.tsx`**
+- [x] **Step 3: Implement `src/nodes/layers.ts` and `NodeLayer.tsx`**
 
 `buildLayers` groups elements by `nodeId`, treating unknown ids as root, and walks `childrenOf` to nest. `NodeLayer` renders `<div style={{ transform: layerTransform(node), transformOrigin: "0 0", position: "absolute" }}>` containing its elements via `render` and its child layers recursively; the root layer renders without a wrapper transform.
 
-- [ ] **Step 4: Switch `Stage` and `Thumbnail` to node layers**
+- [x] **Step 4: Switch `Stage` and `Thumbnail` to node layers**
 
 Both currently flat-map `presentation.elements`. Replace with `buildLayers(...)` + `<NodeLayer>`, passing their existing per-element render (`PlaybackElement` with its visibility/stagger logic for `Stage`, `StaticElement` for `Thumbnail`). Visibility and stagger stay keyed on the element, unchanged — do not move that logic into the layer.
 
-- [ ] **Step 5: Run the suite and typecheck**
+- [x] **Step 5: Run the suite and typecheck**
 
 Run: `npm test` → PASS (existing `deckFixtures`, `visibility`, `stagger`, `holds` tests must still pass)
 Run: `npm run typecheck` → clean
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/nodes/layers.ts src/nodes/layers.test.ts src/components/NodeLayer.tsx src/components/Stage.tsx src/components/Thumbnail.tsx
