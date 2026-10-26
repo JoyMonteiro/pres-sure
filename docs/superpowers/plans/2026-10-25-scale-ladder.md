@@ -229,7 +229,7 @@ git commit -m "feat: node tree queries and unused-rung detection"
 - Consumes: Tasks 1–2.
 - Produces: `makeRung(name: string): Rung`, `makeNode(partial: Partial<SceneNode> & Pick<SceneNode, "rungId">): SceneNode` in `factory.ts`. On the store: transient `currentNodeId: string | null` with `setCurrentNode(id: string | null): void`; history-tracked `addRung(name: string): string`, `renameRung(id: string, name: string): void`, `removeRung(id: string): void`, `addNode(partial: Partial<SceneNode> & Pick<SceneNode, "rungId">): string`, `updateNode(id: string, patch: Partial<SceneNode>): void`, `removeNode(id: string, mode: "promote" | "cascade"): void`, `moveElementToNode(elementId: string, nodeId: string | null): void`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 test("addRung appends to the ladder and returns its id", () => { /* rungs order preserved */ });
@@ -261,19 +261,19 @@ test("removeRung leaves nodes intact but clears the label", () => { /* nodes kee
 
 Drive these through `useStore.getState()` as a store test; there is no existing store test file, so this is the first.
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npx vitest run src/store/nodes.test.ts` → FAIL
 
-- [ ] **Step 3: Implement the factories and store actions**
+- [x] **Step 3: Implement the factories and store actions**
 
 `removeNode` is the only non-obvious one and owns Review Focus item 4. In `promote` mode, for each child and each element of the removed node, compose the removed node's local transform into the child's/element's own `x`, `y` and `scale` before reparenting, so nothing moves on screen; in `cascade` mode, delete `descendantIds` plus the node and every element whose `nodeId` is in that set. `moveElementToNode` converts the element's world rect into the destination node's local units via `worldToLocal`. All mutations call `touch()` and run in one `set()` so each is a single undo entry.
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `npx vitest run src/store/nodes.test.ts` → PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/store/factory.ts src/store/store.ts src/store/nodes.test.ts
