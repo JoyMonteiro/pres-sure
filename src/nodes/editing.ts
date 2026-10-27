@@ -9,13 +9,19 @@ import { resolveTransform } from "./transform";
  * The on-screen scale of one unit inside `nodeId`: the camera's scale times the node's
  * cumulative scale. An unknown id or a cycle resolves to identity, so this is the plain
  * camera scale at the root and for any id that no longer names a node.
+ *
+ * A zero or non-finite cumulative scale falls back to the camera scale too. This value is
+ * a divisor — react-rnd divides pointer deltas by it, and the snap tolerance is `6 / s` —
+ * so a `scale: 0` node (or node JSON with no `scale` at all) would otherwise write
+ * Infinity/NaN into the element's stored rect, which only undo can take back.
  */
 export function effectiveScale(
   camScale: number,
   nodes: SceneNode[],
   nodeId: string | null | undefined
 ): number {
-  return camScale * resolveTransform(nodes, nodeId).s;
+  const { s } = resolveTransform(nodes, nodeId);
+  return Number.isFinite(s) && s !== 0 ? camScale * s : camScale;
 }
 
 /**

@@ -18,6 +18,17 @@ describe("effectiveScale", () => {
     expect(effectiveScale(0.5, [], "ghost")).toBe(0.5);
   });
 
+  test("effectiveScale falls back to the camera scale for a zero-scale node", () => {
+    // A zero scale would make react-rnd divide a pointer delta by 0 and write
+    // Infinity/NaN into the element's stored rect — unrecoverable except by undo.
+    expect(effectiveScale(0.5, [n("a", null, 0, 0, 0)], "a")).toBe(0.5);
+  });
+
+  test("effectiveScale falls back to the camera scale for a non-finite node scale", () => {
+    const broken = { ...n("a", null), scale: Number.NaN };
+    expect(effectiveScale(0.5, [broken], "a")).toBe(0.5);
+  });
+
   test("effectiveScale accumulates down a chain of nodes", () => {
     const nodes = [n("w", null, 0, 0, 150), n("i", "w", 0, 0, 1 / 5)];
     expect(effectiveScale(0.01, nodes, "i")).toBeCloseTo(0.3);
