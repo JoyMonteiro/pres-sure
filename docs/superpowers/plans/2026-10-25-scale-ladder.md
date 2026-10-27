@@ -363,7 +363,7 @@ git commit -m "feat: render elements through nested node layers"
 - Consumes: Tasks 1–4.
 - Produces: `effectiveScale(camScale: number, nodes: SceneNode[], nodeId: string | null | undefined): number` — the on-screen scale of one unit inside that node; `localDelta(d: { x: number; y: number }, t: NodeTransform): { x: number; y: number }`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 test("effectiveScale multiplies camera scale by the node's cumulative scale", () => {
@@ -383,21 +383,21 @@ test("localDelta converts a world drag delta into node-local units", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npx vitest run src/nodes/editing.test.ts` → FAIL
 
-- [ ] **Step 3: Implement `src/nodes/editing.ts`**
+- [x] **Step 3: Implement `src/nodes/editing.ts`**
 
-- [ ] **Step 4: Wire `EditCanvas` and `EditableElement`**
+- [x] **Step 4: Wire `EditCanvas` and `EditableElement`**
 
 `EditCanvas` renders through `buildLayers`/`NodeLayer` like `Stage`, so an element's `position`/`size` given to `Rnd` stay node-local and need no change. Pass `EditableElement` the element's `nodeId`; inside it, `scale` handed to `Rnd` becomes `effectiveScale(camScale, nodes, el.nodeId)`, and the snap threshold `6 / scale` uses that same effective scale so a 6-pixel tolerance stays 6 screen pixels at any depth. The blur-hint comparison (`scale * el.w` vs `el.naturalW`) must also use the effective scale, or deep-zoomed rasters stop warning.
 
-- [ ] **Step 5: Run the suite and typecheck**
+- [x] **Step 5: Run the suite and typecheck**
 
 Run: `npm test` → PASS; `npm run typecheck` → clean
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/nodes/editing.ts src/nodes/editing.test.ts src/components/EditCanvas.tsx src/components/ElementView.tsx

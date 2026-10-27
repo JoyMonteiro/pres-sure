@@ -1,16 +1,23 @@
 import { useEffect, useRef } from "react";
 import { useStore } from "../store/store";
 import { cameraToTransform, screenToWorld } from "../camera/camera";
+import type { Element, SceneNode } from "../types";
+import { buildLayers } from "../nodes/layers";
+import { NodeLayer } from "./NodeLayer";
 import { EditableElement } from "./ElementView";
 
 const MIN_SCALE = 0.02;
 const MAX_SCALE = 40;
+
+/** A deck authored before the ladder has no `nodes`; a shared empty keeps the selector stable. */
+const NO_NODES: SceneNode[] = [];
 
 export function EditCanvas() {
   const ref = useRef<HTMLDivElement>(null);
   const panning = useRef<{ x: number; y: number } | null>(null);
 
   const elements = useStore((s) => s.presentation.elements);
+  const nodes = useStore((s) => s.presentation.nodes) ?? NO_NODES;
   const bg = useStore((s) => s.presentation.world.backgroundColor);
   const cam = useStore((s) => s.editorCamera);
   const viewport = useStore((s) => s.viewport);
@@ -71,7 +78,20 @@ export function EditCanvas() {
     ref.current?.releasePointerCapture(e.pointerId);
   };
 
-  const sorted = [...elements].sort((a, b) => a.z - b.z);
+  // Edit through the same nested layers playback renders (§2.3): an element's stored rect
+  // stays node-local, and `EditableElement` scales the interaction instead of the geometry.
+  const root = buildLayers(elements, nodes);
+  const renderElement = (el: Element) => (
+    <EditableElement
+      key={el.id}
+      el={el}
+      camScale={cam.scale}
+      nodes={nodes}
+      selected={selectedIds.includes(el.id)}
+      // Only meaningful for a multi-selection — one selected element needs no number.
+      selectionIndex={selectedIds.length > 1 ? selectedIds.indexOf(el.id) + 1 : 0}
+    />
+  );
 
   return (
     <div
@@ -84,16 +104,7 @@ export function EditCanvas() {
       onPointerUp={onPointerUp}
     >
       <div className="world" style={{ transform: cameraToTransform(cam, viewport) }}>
-        {sorted.map((el) => (
-          <EditableElement
-            key={el.id}
-            el={el}
-            scale={cam.scale}
-            selected={selectedIds.includes(el.id)}
-            // Only meaningful for a multi-selection — one selected element needs no number.
-            selectionIndex={selectedIds.length > 1 ? selectedIds.indexOf(el.id) + 1 : 0}
-          />
-        ))}
+        <NodeLayer layer={root} render={renderElement} />
         {guides.map((g, i) =>
           g.axis === "x" ? (
             <div

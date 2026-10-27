@@ -2,20 +2,24 @@ import { useEffect, useRef } from "react";
 import { Rnd } from "react-rnd";
 import { motion } from "motion/react";
 import type { TargetAndTransition } from "motion/react";
-import type { Element } from "../types";
+import type { Element, SceneNode } from "../types";
 import { useStore } from "../store/store";
+import { effectiveScale } from "../nodes/editing";
 import { computeSnap } from "../playback/snapping";
 import { STAGGER_STEP_S } from "../playback/stagger";
 
 /** Editable element wrapped in react-rnd (scale-aware drag/resize — §2.2). */
 export function EditableElement({
   el,
-  scale,
+  camScale,
+  nodes,
   selected,
   selectionIndex = 0,
 }: {
   el: Element;
-  scale: number;
+  /** The editor camera's scale. One local unit may be far larger on screen — see below. */
+  camScale: number;
+  nodes: SceneNode[];
   selected: boolean;
   selectionIndex?: number;
 }) {
@@ -23,6 +27,11 @@ export function EditableElement({
   const select = useStore((s) => s.select);
   const toggleSelect = useStore((s) => s.toggleSelect);
   const setGuides = useStore((s) => s.setGuides);
+
+  // The element sits inside its node's CSS transform, so its rect is node-local while the
+  // pointer moves in screen pixels. Every screen-measured quantity below — react-rnd's
+  // delta division, the snap tolerance, the blur hint — uses this, not the camera scale.
+  const scale = effectiveScale(camScale, nodes, el.nodeId);
 
   const others = () =>
     useStore.getState().presentation.elements.filter((e) => e.id !== el.id);
