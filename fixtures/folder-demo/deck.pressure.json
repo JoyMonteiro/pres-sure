@@ -1,0 +1,129 @@
+{
+  "id": "folder-demo",
+  "title": "Lecture folder demo",
+  "createdAt": 1791936000000,
+  "updatedAt": 1791936000000,
+  "world": {
+    "backgroundColor": "#ffffff"
+  },
+  "elements": [
+    {
+      "id": "t-title",
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "w": 860,
+      "h": 97,
+      "rotation": 0,
+      "z": 0,
+      "content": "Lecture folder demo",
+      "textStyle": {
+        "fontSize": 44,
+        "fontWeight": 600,
+        "color": "#18181b",
+        "align": "left"
+      },
+      "lifecycle": {
+        "enterAt": null,
+        "enterEffect": "none",
+        "onExit": "persist"
+      }
+    },
+    {
+      "id": "i-sun",
+      "type": "svg",
+      "x": 0,
+      "y": 200,
+      "w": 300,
+      "h": 300,
+      "rotation": 0,
+      "z": 1,
+      "content": "assets/sun.svg",
+      "naturalW": 300,
+      "naturalH": 300,
+      "lifecycle": {
+        "enterAt": null,
+        "enterEffect": "none",
+        "onExit": "persist"
+      }
+    },
+    {
+      "id": "i-earth",
+      "type": "svg",
+      "x": 420,
+      "y": 260,
+      "w": 180,
+      "h": 180,
+      "rotation": 0,
+      "z": 2,
+      "content": "assets/earth.svg",
+      "naturalW": 180,
+      "naturalH": 180,
+      "lifecycle": {
+        "enterAt": null,
+        "enterEffect": "none",
+        "onExit": "persist"
+      }
+    },
+    {
+      "id": "i-stripes",
+      "type": "image",
+      "x": 0,
+      "y": 640,
+      "w": 800,
+      "h": 200,
+      "rotation": 0,
+      "z": 3,
+      "content": "assets/warming-stripes.png",
+      "naturalW": 64,
+      "naturalH": 16,
+      "lifecycle": {
+        "enterAt": null,
+        "enterEffect": "none",
+        "onExit": "persist"
+      }
+    }
+  ],
+  "frames": [
+    {
+      "id": "f-title",
+      "title": "Title",
+      "x": -40,
+      "y": -40,
+      "w": 940,
+      "h": 529,
+      "rotation": 0,
+      "duration": "auto",
+      "easing": "smooth",
+      "notes": "Title only. Images load from assets/, not from the deck."
+    },
+    {
+      "id": "f-sun-earth",
+      "title": "Sun and Earth",
+      "x": -40,
+      "y": 160,
+      "w": 700,
+      "h": 394,
+      "rotation": 0,
+      "duration": "auto",
+      "easing": "smooth",
+      "notes": "Two SVG files from assets/."
+    },
+    {
+      "id": "f-stripes",
+      "title": "Warming stripes",
+      "x": -40,
+      "y": 600,
+      "w": 880,
+      "h": 495,
+      "rotation": 0,
+      "duration": "auto",
+      "easing": "smooth",
+      "notes": "A PNG file from assets/."
+    }
+  ],
+  "settings": {
+    "defaultEasing": "smooth",
+    "defaultDuration": "auto"
+  }
+}

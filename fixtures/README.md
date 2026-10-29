@@ -57,3 +57,33 @@ holds behind a shot) but hand-edited or older JSON can contain. It must not blow
 - The timeline draws it as its own group instead of silently dropping it; a frame the
   timeline never draws would still swallow a click during playback.
 - The presenter view's next-up pane must survive it too.
+
+## `folder-demo/`
+
+A lecture folder: `deck.pressure.json` plus real files in `assets/` (two SVGs and a PNG).
+Regenerate with `node scripts/make-folder-demo.mjs`. Folder mode writes into the folder,
+so **work on a copy** — never open the fixture itself:
+
+```bash
+rm -rf /tmp/folder-demo && cp -R fixtures/folder-demo /tmp/folder-demo
+npm run dev   # then open http://localhost:5173 in Chrome or Edge
+```
+
+1. **📁 Open folder…** → `/tmp/folder-demo`. The demo deck loads with all three images.
+   Move an element; within ~1 s `deck.pressure.json` changes and `index.html` appears
+   (`ls -l /tmp/folder-demo`).
+2. **Reload** → the *Reopen* overlay appears. Backspace does nothing. *Reopen* → the deck
+   and images are back.
+3. **Edit `deck.pressure.json` on disk** (e.g. change `"title"`), then click back into the
+   tab → the conflict banner appears. Try both *Load from disk* (the new title shows) and,
+   after repeating, *Keep mine* (the file is overwritten).
+4. **Presenter** → current/next panes show the images.
+5. **Serve the folder**: `npx serve /tmp/folder-demo`, open the URL → `index.html` plays
+   all three frames with images; console is clean.
+6. **Export .html** → move the downloaded file somewhere else and open it: it plays with
+   all images (they are embedded again).
+7. **Add an image** named `Keeling Curve.PNG` → `assets/keeling-curve.png` appears. Add the
+   same file again → no new file.
+8. **× on the folder chip** → images stay visible (re-embedded); the chip becomes
+   *📁 Open folder…*.
+9. **Firefox**: there is no *Open folder…* button and the editor works as before.

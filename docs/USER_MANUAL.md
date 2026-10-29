@@ -287,6 +287,38 @@ to it. Frames with an empty title, a title made only of digits, or a title used 
 earlier frame are named by their number. Renaming a frame breaks links that use its
 title, so keep a title fixed once other pages link to it.
 
+### Lecture folders (Chrome & Edge)
+
+For decks with many pictures — or a course site published from a git repo — keep each
+lecture in its own folder instead of a single file:
+
+```
+lectures/01-energy-balance/
+├── deck.pressure.json   ← the editable deck (small: images are referenced, not embedded)
+├── assets/              ← every image you add, as an ordinary file
+└── index.html           ← the player, regenerated automatically
+```
+
+- **📁 Open folder…** in the toolbar. An **empty** folder adopts the current project — its
+  images are written to `assets/`. A folder that already has a `deck.pressure.json` opens
+  that deck. A folder containing an `index.html` but no deck is refused, so an old
+  presentation is never overwritten.
+- From then on every edit is **saved to the folder about a second later**, together with a
+  fresh `index.html`. The chip shows `📁 name · saved`. There is nothing to click: to publish,
+  `git commit` and `git push`.
+- Images keep a readable version of their file name (`Keeling Curve.PNG` →
+  `assets/keeling-curve.png`). Adding the same picture twice stores it once. The editor never
+  deletes files from `assets/` — tidy up by hand if you want to.
+- Images added **by web link** stay links; they are never downloaded into the folder.
+- After a reload, Chrome asks for permission again: click **Reopen 📁 name**.
+- If `deck.pressure.json` changes on disk while the editor is open (say, after `git pull`),
+  saving pauses and a banner offers **Load from disk** or **Keep mine**.
+- **Save .json** and **Export .html** still download single, self-contained files with the
+  images embedded — handy for email or offline use.
+- **×** on the chip closes the folder; the images are embedded back into the deck.
+
+Folder editing needs Chrome or Edge. The published `index.html` plays in every browser.
+
 ---
 
 ## 10. Undo, redo & safety
@@ -331,7 +363,7 @@ title, so keep a title fixed once other pages link to it.
   ready-made deck exercising every reveal feature — import it and step through. Each frame's
   speaker notes say what that step demonstrates. See `fixtures/README.md`.
 - **Not yet supported:** embedded video, PDF/EPS import, real-time multi-user collaboration,
-  and SVG/vector editing. These are out of scope by design or deferred.
+  SVG/vector editing, and folder editing in Firefox/Safari (viewing works everywhere). These are out of scope by design or deferred.
 
 ---
 

@@ -9,6 +9,9 @@ import type { Presentation } from "../types";
 // build instead of only the test run.
 import demoJson from "../../fixtures/hold-frames-demo.pressure.json";
 import edgeJson from "../../fixtures/hold-frames-edge.pressure.json";
+import { parseDeck } from "../folder/deckFolder";
+import { isAssetPath } from "../folder/assetNames";
+import folderDemoJson from "../../fixtures/folder-demo/deck.pressure.json";
 
 const load = (j: unknown): Presentation => j as Presentation;
 
@@ -81,5 +84,18 @@ describe("hold-frames-edge deck", () => {
     expect(groups.flatMap((g) => [g.shot.id, ...g.holds.map((h) => h.id)])).toEqual(
       p.frames.map((f) => f.id)
     );
+  });
+});
+
+describe("folder-demo deck", () => {
+  const p = parseDeck(JSON.stringify(folderDemoJson));
+
+  it("references every image by a relative assets/ path", () => {
+    const images = p.elements.filter((e) => e.type !== "text");
+    expect(images.length).toBe(3);
+    for (const e of images) {
+      expect(isAssetPath(e.content), e.id).toBe(true);
+      expect(e.content.startsWith("assets/"), e.id).toBe(true);
+    }
   });
 });
