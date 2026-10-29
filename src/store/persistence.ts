@@ -71,3 +71,30 @@ export async function importJson(file: File): Promise<Presentation> {
   const text = await file.text();
   return JSON.parse(text) as Presentation;
 }
+
+const FOLDER_KEY = "folder";
+
+/** Run one request against the presentations store and resolve with its result. */
+async function idbRequest<T>(mode: IDBTransactionMode, op: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+  const db = await openDb();
+  try {
+    return await new Promise<T>((resolve, reject) => {
+      const req = op(db.transaction(STORE, mode).objectStore(STORE));
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+/** Remember (or, with null, forget) the open lecture folder across reloads. */
+export async function saveFolderHandle(handle: FileSystemDirectoryHandle | null): Promise<void> {
+  if (handle) await idbRequest("readwrite", (s) => s.put(handle, FOLDER_KEY));
+  else await idbRequest("readwrite", (s) => s.delete(FOLDER_KEY));
+}
+
+export async function loadFolderHandle(): Promise<FileSystemDirectoryHandle | null> {
+  const h = await idbRequest<FileSystemDirectoryHandle | undefined>("readonly", (s) => s.get(FOLDER_KEY));
+  return h ?? null;
+}
