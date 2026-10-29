@@ -754,7 +754,7 @@ git commit -m "feat: migrate embedded images to files and inline them back"
   - `subscribeRegistry(listener: () => void): () => void`, `registryVersion(): number`
   - `useAssetSrc(content: string | null): string | null` (React hook, in its own file so the registry stays React-free)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `src/folder/assetRegistry.test.ts`:
 
@@ -833,12 +833,12 @@ describe("isPlaceholderSrc", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/folder/assetRegistry.test.ts`
 Expected: FAIL — cannot resolve `./assetRegistry`.
 
-- [ ] **Step 3: Implement `src/folder/assetRegistry.ts`**
+- [x] **Step 3: Implement `src/folder/assetRegistry.ts`**
 
 ```ts
 // Path -> blob: URL registry (spec §4). Module-level, one per window: the editor and the
@@ -928,7 +928,7 @@ export const registryVersion = (): number => version;
 
 Note: `missingSrc` adds a new string to `placeholders` per distinct path; identical paths produce identical strings, so the set stays bounded by the number of missing paths.
 
-- [ ] **Step 4: Implement `src/folder/useAssetSrc.ts`**
+- [x] **Step 4: Implement `src/folder/useAssetSrc.ts`**
 
 ```ts
 import { useSyncExternalStore } from "react";
@@ -941,7 +941,7 @@ export function useAssetSrc(content: string | null): string | null {
 }
 ```
 
-- [ ] **Step 5: Wire it into `ElementBody`**
+- [x] **Step 5: Wire it into `ElementBody`**
 
 In `src/components/ElementView.tsx`, add imports next to the existing ones:
 
@@ -996,14 +996,14 @@ with:
   );
 ```
 
-- [ ] **Step 6: Run tests, typecheck, and smoke-test classic mode**
+- [x] **Step 6: Run tests, typecheck, and smoke-test classic mode**
 
 Run: `npm test && npm run typecheck`
 Expected: PASS.
 
 Then `npm run dev`, open http://localhost:5173, add a PNG with *+ Image*: it must still display (data URIs pass straight through). Stop the server.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/folder/assetRegistry.ts src/folder/assetRegistry.test.ts src/folder/useAssetSrc.ts src/components/ElementView.tsx
@@ -1029,7 +1029,7 @@ git commit -m "feat: resolve asset paths through a registry when rendering image
 
 Note vs. spec §4: `open()` performs the adoption writes itself (assets, deck, player) instead of returning a `writes` list — one fewer step for callers to forget.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `src/folder/deckFolder.test.ts`:
 
@@ -1210,12 +1210,12 @@ describe("DeckFolder.save", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/folder/deckFolder.test.ts`
 Expected: FAIL — cannot resolve `./deckFolder`.
 
-- [ ] **Step 3: Implement `src/folder/deckFolder.ts`**
+- [x] **Step 3: Implement `src/folder/deckFolder.ts`**
 
 ```ts
 // One open lecture folder (spec §4). No React, no store — the controller wires it up.
@@ -1343,12 +1343,12 @@ export class DeckFolder {
 }
 ```
 
-- [ ] **Step 4: Run tests and typecheck**
+- [x] **Step 4: Run tests and typecheck**
 
 Run: `npm test && npm run typecheck`
 Expected: PASS. If "loads an existing deck without writing anything" fails, check that `open()` does not call `save()` on the loaded path.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/folder/deckFolder.ts src/folder/deckFolder.test.ts
@@ -1375,7 +1375,7 @@ git commit -m "feat: add DeckFolder session with adopt, save and conflict detect
   - `saveFolderHandle(handle: FileSystemDirectoryHandle | null): Promise<void>`, `loadFolderHandle(): Promise<FileSystemDirectoryHandle | null>`
   - controller: `canOpenFolders(): boolean`, `pickFolder()`, `restoreRememberedFolder(): Promise<boolean>`, `reopenFolder()`, `forgetFolder()`, `closeFolder()`, `addImageFiles(files: File[])`, `importDeckFile(file: File)`, `downloadJson()`, `downloadHtml()`, `resolveConflict(choice: "disk" | "mine")`, `checkForExternalChange()`, `installFolderAutosave(): void` — all async ones return `Promise<void>` unless stated.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `src/folder/folderStore.test.ts`:
 
@@ -1397,12 +1397,12 @@ describe("isEditingLocked", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/folder/folderStore.test.ts`
 Expected: FAIL — cannot resolve `./folderStore`.
 
-- [ ] **Step 3: Implement `src/folder/folderStore.ts`**
+- [x] **Step 3: Implement `src/folder/folderStore.ts`**
 
 Kept separate from `store.ts` so zundo never records folder status in undo history (spec §4).
 
@@ -1435,12 +1435,12 @@ export const useFolderStore = create<FolderState>()(() => ({
 export const isEditingLocked = (): boolean => useFolderStore.getState().status === "needsPermission";
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/folder/folderStore.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Remember the folder handle in IndexedDB**
+- [x] **Step 5: Remember the folder handle in IndexedDB**
 
 Append to `src/store/persistence.ts` (same object store, new key — no DB version bump):
 
@@ -1473,7 +1473,7 @@ export async function loadFolderHandle(): Promise<FileSystemDirectoryHandle | nu
 }
 ```
 
-- [ ] **Step 6: Implement `src/folder/controller.ts`**
+- [x] **Step 6: Implement `src/folder/controller.ts`**
 
 ```ts
 // Glue between the folder session, the main store and the UI. Browser-only (window,
@@ -1706,12 +1706,12 @@ export async function checkForExternalChange(): Promise<void> {
 }
 ```
 
-- [ ] **Step 7: Typecheck and test**
+- [x] **Step 7: Typecheck and test**
 
 Run: `npm run typecheck && npm test`
 Expected: PASS. (`controller.ts` is not imported anywhere yet; `noUnusedLocals` does not flag unused exports.)
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/folder/folderStore.ts src/folder/folderStore.test.ts src/store/persistence.ts src/folder/controller.ts
