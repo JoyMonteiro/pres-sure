@@ -42,8 +42,12 @@ function hasContent(p: Presentation) {
 let queue: Promise<void> = Promise.resolve();
 const enqueue = (fn: () => Promise<void>) => (queue = queue.then(fn, fn));
 
-async function runSave(session: DeckFolder, p: Presentation, force = false): Promise<void> {
-  if (useFolderStore.getState().session !== session) return; // folder switched or closed
+/** Writes the latest deck; unless forced (Keep mine), only while the folder is open (never over a conflict). */
+async function runSave(session: DeckFolder, force = false): Promise<void> {
+  const { session: current, status } = useFolderStore.getState();
+  if (current !== session) return; // folder switched or closed
+  if (!force && status !== "open") return;
+  const p = useStore.getState().presentation;
   useFolderStore.setState({ saving: "saving" });
   try {
     const r = await session.save(p, { force });
@@ -57,7 +61,7 @@ async function runSave(session: DeckFolder, p: Presentation, force = false): Pro
 }
 
 const scheduleSave = debounce(
-  (session: DeckFolder, p: Presentation) => void enqueue(() => runSave(session, p)),
+  (session: DeckFolder) => void enqueue(() => runSave(session)),
   FOLDER_SAVE_MS
 );
 
@@ -70,7 +74,7 @@ export function installFolderAutosave(): void {
     const { session, status } = useFolderStore.getState();
     if (!session || status !== "open") return;
     useFolderStore.setState({ saving: "pending" });
-    scheduleSave(session, state.presentation);
+    scheduleSave(session);
   });
 }
 
@@ -79,8 +83,11 @@ export function installFolderAutosave(): void {
 async function attach(handle: FileSystemDirectoryHandle, isDirty: boolean): Promise<void> {
   const previous = useFolderStore.getState().session;
   let current = useStore.getState().presentation;
-  // Moving to a different folder: carry the images along by embedding them first.
-  if (previous) current = await inlineAssets(current, previous.io);
+  // Moving to a different folder: flush pending edits, then carry the images along by embedding them.
+  if (previous) {
+    await enqueue(() => runSave(previous));
+    current = await inlineAssets(useStore.getState().presentation, previous.io);
+  }
   const session = new DeckFolder(fsAccessFolder(handle));
   const result = await session.open(current, {
     isDirty,
@@ -147,6 +154,7 @@ export async function forgetFolder(): Promise<void> {
 export async function closeFolder(): Promise<void> {
   const { session } = useFolderStore.getState();
   if (!session) return;
+  await enqueue(() => runSave(session)); // flush edits still waiting on the debounce
   const embedded = await inlineAssets(useStore.getState().presentation, session.io);
   detach();
   loadDeck(embedded);
@@ -200,17 +208,20 @@ export async function resolveConflict(choice: "disk" | "mine"): Promise<void> {
   if (!session) return;
   if (choice === "mine") {
     useFolderStore.setState({ status: "open" });
-    await enqueue(() => runSave(session, useStore.getState().presentation, true));
+    await enqueue(() => runSave(session, true));
     return;
   }
-  try {
-    const deck = await session.reload();
-    setRegistryFolder(session.io); // images may have changed on disk too
-    useFolderStore.setState({ status: "open", error: null });
-    loadDeck(deck);
-  } catch (e) {
-    window.alert(`Couldn't load from disk: ${errorMessage(e)}`);
-  }
+  // Through the queue, so a running save can't overlap the reload.
+  await enqueue(async () => {
+    try {
+      const deck = await session.reload();
+      setRegistryFolder(session.io); // images may have changed on disk too
+      useFolderStore.setState({ status: "open", error: null });
+      loadDeck(deck);
+    } catch (e) {
+      window.alert(`Couldn't load from disk: ${errorMessage(e)}`);
+    }
+  });
 }
 
 /** Focus/visibility check — catches a git pull made while the tab was in the background. */
