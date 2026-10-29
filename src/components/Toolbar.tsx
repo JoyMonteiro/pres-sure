@@ -1,8 +1,7 @@
 import { useEffect, useReducer, useRef } from "react";
 import { useStore } from "../store/store";
-import { exportJson, importJson } from "../store/persistence";
-import { exportHtml } from "../export/exportHtml";
-import type { ElementType } from "../types";
+import { addImageFiles, downloadHtml, downloadJson, importDeckFile } from "../folder/controller";
+import { FolderChip } from "./FolderUI";
 
 function useTemporal() {
   const [, force] = useReducer((c) => c + 1, 0);
@@ -10,34 +9,14 @@ function useTemporal() {
   return useStore.temporal.getState();
 }
 
-const fileToDataUrl = (f: File) =>
-  new Promise<string>((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result as string);
-    r.onerror = rej;
-    r.readAsDataURL(f);
-  });
-
-const typeFor = (f: File): ElementType =>
-  f.type === "image/svg+xml" ? "svg" : f.type === "image/gif" ? "gif" : "image";
-
 export function Toolbar() {
   const title = useStore((s) => s.presentation.title);
   const setTitle = useStore((s) => s.setTitle);
   const addElement = useStore((s) => s.addElement);
   const setMode = useStore((s) => s.setMode);
-  const loadPresentation = useStore((s) => s.loadPresentation);
   const temporal = useTemporal();
   const fileRef = useRef<HTMLInputElement>(null);
   const jsonRef = useRef<HTMLInputElement>(null);
-
-  const onAddAsset = async (files: FileList | null) => {
-    if (!files) return;
-    for (const f of Array.from(files)) {
-      const url = await fileToDataUrl(f);
-      addElement(typeFor(f), url);
-    }
-  };
 
   const openPresenter = () => window.open(`${location.pathname}#presenter`, "pres-sure-presenter", "width=1100,height=720");
 
@@ -55,8 +34,10 @@ export function Toolbar() {
           multiple
           hidden
           onChange={(e) => {
-            onAddAsset(e.target.files);
+            // Copy the list before clearing the input — clearing empties the live FileList.
+            const files = Array.from(e.target.files ?? []);
             e.target.value = "";
+            void addImageFiles(files);
           }}
         />
       </div>
@@ -71,19 +52,22 @@ export function Toolbar() {
       </div>
       <div className="spacer" />
       <div className="group">
+        <FolderChip />
+        <div className="sep" />
         <button onClick={() => jsonRef.current?.click()}>Import</button>
         <input
           ref={jsonRef}
           type="file"
           accept="application/json"
           hidden
-          onChange={async (e) => {
-            if (e.target.files?.[0]) loadPresentation(await importJson(e.target.files[0]));
+          onChange={(e) => {
+            const file = e.target.files?.[0];
             e.target.value = "";
+            if (file) void importDeckFile(file);
           }}
         />
-        <button onClick={() => exportJson(useStore.getState().presentation)}>Save .json</button>
-        <button onClick={() => exportHtml(useStore.getState().presentation)}>Export .html</button>
+        <button onClick={() => void downloadJson()}>Save .json</button>
+        <button onClick={() => void downloadHtml()}>Export .html</button>
         <div className="sep" />
         <button onClick={openPresenter} title="Open presenter view in a new window">
           Presenter

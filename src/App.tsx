@@ -8,6 +8,9 @@ import { PropertiesPanel } from "./components/PropertiesPanel";
 import { Timeline } from "./components/Timeline";
 import { Player } from "./components/Player";
 import { PresenterView } from "./components/PresenterView";
+import { ConflictBanner, FolderOverlay } from "./components/FolderUI";
+import { checkForExternalChange, installFolderAutosave, restoreRememberedFolder } from "./folder/controller";
+import { isEditingLocked } from "./folder/folderStore";
 
 export function App() {
   if (window.location.hash === "#presenter") return <PresenterView />;
@@ -20,21 +23,39 @@ function Editor() {
   const [booted, setBooted] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
 
-  // Bootstrap: restore autosaved work, else offer a template.
+  // Bootstrap: restore autosaved work, else offer a template. A remembered lecture folder
+  // shows the reopen overlay instead of the template picker.
   useEffect(() => {
-    loadLocal().then((p) => {
+    installFolderAutosave();
+    (async () => {
+      const p = await loadLocal();
+      const remembered = await restoreRememberedFolder();
       if (p && (p.elements.length || p.frames.length)) {
         loadPresentation(p);
-      } else {
+      } else if (!remembered) {
         setShowPicker(true);
       }
       setBooted(true);
-    });
+    })();
   }, [loadPresentation]);
+
+  // Returning to the tab after a git pull: check whether the deck changed on disk (spec D10).
+  useEffect(() => {
+    const check = () => {
+      if (document.visibilityState === "visible") void checkForExternalChange();
+    };
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      window.removeEventListener("focus", check);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, []);
 
   // Global edit-mode shortcuts.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (isEditingLocked()) return; // the reopen overlay is up — the canvas is read-only
       const t = e.target as HTMLElement;
       const typing = t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable;
       const meta = e.ctrlKey || e.metaKey;
@@ -69,6 +90,8 @@ function Editor() {
       </div>
       <PropertiesPanel />
       <Timeline />
+      <FolderOverlay />
+      <ConflictBanner />
       {showPicker && (
         <div className="modal-bg">
           <div className="modal">
