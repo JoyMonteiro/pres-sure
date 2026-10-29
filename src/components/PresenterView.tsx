@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { Size } from "../camera/camera";
 import { frameToCamera } from "../camera/camera";
-import { loadLocal } from "../store/persistence";
+import { loadFolderHandle, loadLocal } from "../store/persistence";
+import { fsAccessFolder } from "../folder/folderIO";
+import { setRegistryFolder } from "../folder/assetRegistry";
 import { resolveFrameRect } from "../playback/holds";
 import { openChannel, type PlaybackMsg } from "../playback/sync";
 import type { Presentation } from "../types";
@@ -13,6 +15,27 @@ export function PresenterView() {
   const [index, setIndex] = useState(0);
   const [start] = useState(() => Date.now());
   const [elapsed, setElapsed] = useState(0);
+
+  // In folder mode the deck holds asset paths; read them through the remembered folder.
+  // Chrome grants folder permission per site, so this is normally already "granted".
+  const [needsGrant, setNeedsGrant] = useState<FileSystemDirectoryHandle | null>(null);
+  useEffect(() => {
+    loadFolderHandle()
+      .then(async (h) => {
+        if (!h) return;
+        if ((await h.queryPermission({ mode: "read" })) === "granted") setRegistryFolder(fsAccessFolder(h));
+        else setNeedsGrant(h);
+      })
+      .catch(() => {});
+  }, []);
+
+  const grant = async () => {
+    if (!needsGrant) return;
+    if ((await needsGrant.requestPermission({ mode: "read" })) === "granted") {
+      setRegistryFolder(fsAccessFolder(needsGrant));
+      setNeedsGrant(null);
+    }
+  };
 
   useEffect(() => {
     loadLocal().then((p) => p && setPres(p));
@@ -51,6 +74,11 @@ export function PresenterView() {
         </div>
       </div>
       <div className="notes">
+        {needsGrant && (
+          <button className="primary" onClick={() => void grant()} style={{ marginBottom: 8 }}>
+            Grant access to 📁 {needsGrant.name} to show images
+          </button>
+        )}
         <strong>Notes</strong>
         <div>{cur?.notes || "—"}</div>
       </div>
