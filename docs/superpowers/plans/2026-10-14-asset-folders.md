@@ -52,7 +52,7 @@
   - `chooseAssetName(desired: string, hash: string, existing: ReadonlyMap<string, string>): { name: string; reused: boolean }` — `existing` maps file name (no directory) → SHA-256 hex
   - `sha256Hex(data: Blob | ArrayBuffer): Promise<string>`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `src/folder/dataUrl.test.ts`:
 
@@ -165,12 +165,12 @@ describe("sha256Hex", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `npx vitest run src/folder`
 Expected: FAIL — cannot resolve `./dataUrl` / `./assetNames`.
 
-- [ ] **Step 3: Implement `src/folder/dataUrl.ts`**
+- [x] **Step 3: Implement `src/folder/dataUrl.ts`**
 
 ```ts
 // Data-URI <-> Blob conversion without FileReader, so it runs under Node in tests.
@@ -219,7 +219,7 @@ export async function blobToDataUrl(blob: Blob, nameHint = ""): Promise<string> 
 }
 ```
 
-- [ ] **Step 4: Implement `src/folder/assetNames.ts`**
+- [x] **Step 4: Implement `src/folder/assetNames.ts`**
 
 ```ts
 // Asset naming (spec D6) and content classification (spec D5). Pure apart from hashing.
@@ -279,12 +279,12 @@ export async function sha256Hex(data: Blob | ArrayBuffer): Promise<string> {
 }
 ```
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `npx vitest run src/folder && npm run typecheck`
 Expected: all PASS, typecheck clean. If the `".."` or `".png"` cases fail, re-check that the stem trim regex strips leading/trailing dots *and* dashes.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/folder/dataUrl.ts src/folder/dataUrl.test.ts src/folder/assetNames.ts src/folder/assetNames.test.ts
@@ -313,7 +313,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   - `fsAccessFolder(root: FileSystemDirectoryHandle): FolderIO`
   - Global type augmentations: `FileSystemHandle.queryPermission/requestPermission`, `FileSystemDirectoryHandle.entries()`, `Window.showDirectoryPicker`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `src/folder/folderIO.test.ts`:
 
@@ -356,12 +356,12 @@ describe("memoryFolder", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/folder/folderIO.test.ts`
 Expected: FAIL — cannot resolve `./folderIO`.
 
-- [ ] **Step 3: Add the missing File System Access types**
+- [x] **Step 3: Add the missing File System Access types**
 
 `src/folder/fs-access.d.ts` (a global declaration file — no `import`/`export`):
 
@@ -388,7 +388,7 @@ interface Window {
 }
 ```
 
-- [ ] **Step 4: Implement `src/folder/folderIO.ts`**
+- [x] **Step 4: Implement `src/folder/folderIO.ts`**
 
 ```ts
 // The I/O seam for a lecture folder (spec §4). Everything above this interface is tested
@@ -519,12 +519,12 @@ export function fsAccessFolder(root: FileSystemDirectoryHandle): FolderIO {
 }
 ```
 
-- [ ] **Step 5: Run tests and typecheck**
+- [x] **Step 5: Run tests and typecheck**
 
 Run: `npx vitest run src/folder && npm run typecheck`
 Expected: PASS, typecheck clean. If `tsc` complains about duplicate declarations of `entries` or `queryPermission`, your TypeScript lib already ships them — delete just the conflicting member from `fs-access.d.ts`, not the whole file.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/folder/fs-access.d.ts src/folder/folderIO.ts src/folder/folderIO.test.ts
@@ -548,7 +548,7 @@ git commit -m "feat: add FolderIO seam with in-memory and File System Access imp
   - `migrateEmbedded(p: Presentation, existing: ReadonlyMap<string, string>): Promise<{ deck: Presentation; files: PendingFile[]; names: Map<string, string> }>` — `names` is `existing` plus every newly chosen name → hash
   - `inlineAssets(p: Presentation, io: FolderIO): Promise<Presentation>`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `src/folder/migrate.test.ts`:
 
@@ -642,12 +642,12 @@ describe("inlineAssets", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `npx vitest run src/folder/migrate.test.ts`
 Expected: FAIL — cannot resolve `./migrate`.
 
-- [ ] **Step 3: Implement `src/folder/migrate.ts`**
+- [x] **Step 3: Implement `src/folder/migrate.ts`**
 
 ```ts
 // Embedded deck -> folder deck (spec D7): data: URIs become files in assets/.
@@ -686,7 +686,7 @@ export async function migrateEmbedded(
 }
 ```
 
-- [ ] **Step 4: Implement `src/export/inline.ts`**
+- [x] **Step 4: Implement `src/export/inline.ts`**
 
 ```ts
 // Folder deck -> embedded deck: the inverse of migrateEmbedded. Used so *Save .json* and
@@ -721,12 +721,12 @@ export async function inlineAssets(p: Presentation, io: FolderIO): Promise<Prese
 }
 ```
 
-- [ ] **Step 5: Run tests and typecheck**
+- [x] **Step 5: Run tests and typecheck**
 
 Run: `npx vitest run src/folder && npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/folder/migrate.ts src/folder/migrate.test.ts src/export/inline.ts
