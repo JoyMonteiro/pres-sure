@@ -1733,7 +1733,7 @@ git commit -m "feat: add folder state, remembered handle and folder controller"
 - Consumes: everything exported by `src/folder/controller.ts` and `src/folder/folderStore.ts` (Task 6).
 - Produces: `FolderChip`, `FolderOverlay`, `ConflictBanner` React components.
 
-- [ ] **Step 1: Create `src/components/FolderUI.tsx`**
+- [x] **Step 1: Create `src/components/FolderUI.tsx`**
 
 ```tsx
 import { useFolderStore } from "../folder/folderStore";
@@ -1825,7 +1825,7 @@ export function ConflictBanner() {
 }
 ```
 
-- [ ] **Step 2: Replace `src/components/Toolbar.tsx`**
+- [x] **Step 2: Replace `src/components/Toolbar.tsx`**
 
 Replace the whole file with (the asset/JSON/export logic moved into the controller; markup otherwise unchanged):
 
@@ -1915,7 +1915,7 @@ export function Toolbar() {
 
 Before replacing, diff the current file against this version (`git diff --no-index` or by eye) and carry over anything in the current markup that is not shown here — the intent is to change only the asset, import and export handlers and to add `<FolderChip />`.
 
-- [ ] **Step 3: Update `src/App.tsx`**
+- [x] **Step 3: Update `src/App.tsx`**
 
 Add imports:
 
@@ -1987,7 +1987,7 @@ In the editor's returned JSX, directly after `<Timeline />`, add:
       <ConflictBanner />
 ```
 
-- [ ] **Step 4: Append styles to `src/styles.css`**
+- [x] **Step 4: Append styles to `src/styles.css`**
 
 ```css
 /* ---- Lecture folder ---- */
@@ -1998,12 +1998,12 @@ In the editor's returned JSX, directly after `<Timeline />`, add:
 .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
 ```
 
-- [ ] **Step 5: Typecheck, test, build**
+- [x] **Step 5: Typecheck, test, build**
 
 Run: `npm run typecheck && npm test && npm run build`
 Expected: all succeed.
 
-- [ ] **Step 6: Smoke-test in Chrome**
+- [x] **Step 6: Smoke-test in Chrome**
 
 `npm run dev`, open http://localhost:5173 in Chrome.
 1. Classic mode still works: add a PNG, *Export .html*, open the downloaded file — image shows.
@@ -2012,7 +2012,7 @@ Expected: all succeed.
 4. Reload the page → the overlay appears; press Backspace with an element previously selected — nothing is deleted; click *Reopen* → editor restores.
 Stop the server.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/components/FolderUI.tsx src/components/Toolbar.tsx src/App.tsx src/styles.css
@@ -2031,7 +2031,7 @@ git commit -m "feat: lecture-folder toolbar chip, reopen overlay and conflict ba
 - Consumes: `loadFolderHandle` (Task 6); `fsAccessFolder` (Task 2); `setRegistryFolder` (Task 4).
 - Produces: nothing new.
 
-- [ ] **Step 1: Add imports**
+- [x] **Step 1: Add imports**
 
 ```ts
 import { loadFolderHandle, loadLocal } from "../store/persistence";
@@ -2041,7 +2041,7 @@ import { setRegistryFolder } from "../folder/assetRegistry";
 
 (replace the existing `import { loadLocal } from "../store/persistence";` with the first line).
 
-- [ ] **Step 2: Resolve folder access on mount**
+- [x] **Step 2: Resolve folder access on mount**
 
 Inside `PresenterView`, after the existing `const [elapsed, setElapsed] = useState(0);`, add:
 
@@ -2068,7 +2068,7 @@ Inside `PresenterView`, after the existing `const [elapsed, setElapsed] = useSta
   };
 ```
 
-- [ ] **Step 3: Show the grant button**
+- [x] **Step 3: Show the grant button**
 
 In the returned JSX, replace:
 
@@ -2089,14 +2089,14 @@ with:
         <strong>Notes</strong>
 ```
 
-- [ ] **Step 4: Typecheck, test, verify**
+- [x] **Step 4: Typecheck, test, verify**
 
 Run: `npm run typecheck && npm test`
 Expected: PASS.
 
 With the dev server and the `/tmp/pres-sure-smoke` folder from Task 7 open in the editor, click *Presenter*: the current and next panes show the folder's images (not grey placeholders).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/PresenterView.tsx
@@ -2119,7 +2119,7 @@ git commit -m "feat: presenter view loads lecture-folder assets"
 - Consumes: `parseDeck` (Task 5), `isAssetPath` (Task 1).
 - Produces: nothing for code.
 
-- [ ] **Step 1: Write the generator `scripts/make-folder-demo.mjs`**
+- [x] **Step 1: Write the generator `scripts/make-folder-demo.mjs`**
 
 ```js
 // Generates fixtures/folder-demo/: a lecture folder with real image files, for the manual
@@ -2227,12 +2227,12 @@ writeFileSync(`${OUT}/deck.pressure.json`, JSON.stringify(deck, null, 2));
 console.log(`wrote ${OUT}`);
 ```
 
-- [ ] **Step 2: Generate the fixture**
+- [x] **Step 2: Generate the fixture**
 
 Run: `node scripts/make-folder-demo.mjs && ls -R fixtures/folder-demo && file fixtures/folder-demo/assets/warming-stripes.png`
 Expected: the four files exist; `file` reports `PNG image data, 64 x 16, 8-bit/color RGB`.
 
-- [ ] **Step 3: Guard the fixture with a test**
+- [x] **Step 3: Guard the fixture with a test**
 
 Append to `src/playback/deckFixtures.test.ts` (add the two imports at the top with the others):
 
@@ -2260,7 +2260,7 @@ describe("folder-demo deck", () => {
 Run: `npm test && npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 4: Document the manual checks in `fixtures/README.md`**
+- [x] **Step 4: Document the manual checks in `fixtures/README.md`**
 
 Append:
 
@@ -2296,7 +2296,7 @@ npm run dev   # then open http://localhost:5173 in Chrome or Edge
 9. **Firefox**: there is no *Open folder…* button and the editor works as before.
 ````
 
-- [ ] **Step 5: Update `docs/USER_MANUAL.md`**
+- [x] **Step 5: Update `docs/USER_MANUAL.md`**
 
 In **§9 Saving, exporting & importing**, after the paragraph that starts "The exported file responds…" and before the `---` that ends §9, insert:
 
@@ -2336,11 +2336,11 @@ Folder editing needs Chrome or Edge. The published `index.html` plays in every b
 
 In **§12 Tips & limits**, in the *Not yet supported* bullet, append: `folder editing in Firefox/Safari (viewing works everywhere)`.
 
-- [ ] **Step 6: Run the full manual checklist**
+- [x] **Step 6: Run the full manual checklist**
 
 Run: `npm run typecheck && npm test && npm run build`, then work through all nine steps of the new `fixtures/README.md` section in Chrome (and step 9 in Firefox). Record any failure as a bug against the owning task before continuing; do not mark this step done with a failing check.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add scripts/make-folder-demo.mjs fixtures/folder-demo src/playback/deckFixtures.test.ts fixtures/README.md docs/USER_MANUAL.md
