@@ -40,13 +40,30 @@ export class DeckFolder {
     return this.io.name;
   }
 
+  /** lastModified of DECK_FILE as of our last read or write — remember it to resume after a reload. */
+  get modified(): number | null {
+    return this.knownModified;
+  }
+
   async open(
     current: Presentation,
-    opts: { isDirty: boolean; confirmReplace: () => boolean | Promise<boolean> }
+    opts: {
+      isDirty: boolean;
+      confirmReplace: () => boolean | Promise<boolean>;
+      /** `modified` from the previous session: if the deck on disk is still the one we last wrote,
+       * `current` (the browser's autosave) is newer — edits made in the second before a reload. */
+      resumeIfUnchangedSince?: number | null;
+    }
   ): Promise<OpenResult> {
     const existing = await this.io.readText(DECK_FILE);
     if (existing) {
       const deck = parseDeck(existing.text); // throws before anything is written
+      const resume = opts.resumeIfUnchangedSince;
+      if (resume != null && existing.lastModified === resume && current.id === deck.id) {
+        this.knownModified = existing.lastModified;
+        this.knownText = existing.text;
+        return { kind: "loaded", deck: current };
+      }
       if (opts.isDirty && !(await opts.confirmReplace())) return { kind: "cancelled" };
       this.knownModified = existing.lastModified;
       this.knownText = existing.text;

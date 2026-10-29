@@ -1,7 +1,15 @@
 // Glue between the folder session, the main store and the UI. Browser-only (window,
 // IndexedDB, File System Access), so it is exercised by the manual checks, not unit tests.
 import { useStore } from "../store/store";
-import { debounce, exportJson, importJson, loadFolderHandle, saveFolderHandle } from "../store/persistence";
+import {
+  debounce,
+  exportJson,
+  importJson,
+  loadFolderHandle,
+  loadFolderStamp,
+  saveFolderHandle,
+  saveFolderStamp,
+} from "../store/persistence";
 import { exportHtml } from "../export/exportHtml";
 import { inlineAssets } from "../export/inline";
 import type { ElementType, Presentation } from "../types";
@@ -51,6 +59,7 @@ async function runSave(session: DeckFolder, force = false): Promise<void> {
   useFolderStore.setState({ saving: "saving" });
   try {
     const r = await session.save(p, { force });
+    if (r === "saved") void saveFolderStamp(session.modified).catch(() => {});
     if (useFolderStore.getState().session !== session) return;
     useFolderStore.setState(
       r === "conflict" ? { status: "conflict", saving: "idle" } : { status: "open", saving: "idle", error: null }
@@ -80,7 +89,11 @@ export function installFolderAutosave(): void {
 
 // --- Opening, reopening, closing ---
 
-async function attach(handle: FileSystemDirectoryHandle, isDirty: boolean): Promise<void> {
+async function attach(
+  handle: FileSystemDirectoryHandle,
+  isDirty: boolean,
+  resumeIfUnchangedSince?: number | null
+): Promise<void> {
   const previous = useFolderStore.getState().session;
   let current = useStore.getState().presentation;
   // Moving to a different folder: flush pending edits, then carry the images along by embedding them.
@@ -91,6 +104,7 @@ async function attach(handle: FileSystemDirectoryHandle, isDirty: boolean): Prom
   const session = new DeckFolder(fsAccessFolder(handle));
   const result = await session.open(current, {
     isDirty,
+    resumeIfUnchangedSince,
     confirmReplace: () =>
       window.confirm(
         `Replace the current project with the deck in “${handle.name}”?\n\n` +
@@ -103,6 +117,9 @@ async function attach(handle: FileSystemDirectoryHandle, isDirty: boolean): Prom
   useFolderStore.setState({ status: "open", name: handle.name, handle, session, saving: "idle", error: null });
   loadDeck(result.deck);
   await saveFolderHandle(handle);
+  await saveFolderStamp(session.modified);
+  // Resumed the browser's newer copy: write it to the folder now.
+  if (result.deck === current) void enqueue(() => runSave(session));
 }
 
 export async function pickFolder(): Promise<void> {
@@ -133,7 +150,9 @@ export async function reopenFolder(): Promise<void> {
   if (!handle) return;
   if ((await handle.requestPermission({ mode: "readwrite" })) !== "granted") return;
   try {
-    await attach(handle, false); // disk wins over the IndexedDB copy (spec D8)
+    // Disk wins over the IndexedDB copy (spec D8) — unless the disk deck is still the one we last
+    // wrote, in which case the IndexedDB copy holds edits made just before the reload.
+    await attach(handle, false, await loadFolderStamp().catch(() => null));
   } catch (e) {
     window.alert(`Couldn't reopen “${handle.name}”: ${errorMessage(e)}`);
   }

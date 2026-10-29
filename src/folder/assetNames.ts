@@ -38,13 +38,16 @@ export function chooseAssetName(
   existing: ReadonlyMap<string, string>
 ): { name: string; reused: boolean } {
   for (const [name, h] of existing) if (h === hash) return { name, reused: true };
-  if (!existing.has(desired)) return { name: desired, reused: false };
+  // Case-insensitive: on APFS and NTFS "keeling.png" would open an existing "Keeling.png".
+  const taken = new Set([...existing.keys()].map((n) => n.toLowerCase()));
+  const free = (name: string) => !taken.has(name.toLowerCase());
+  if (free(desired)) return { name: desired, reused: false };
   const dot = desired.lastIndexOf(".");
   const stem = dot >= 0 ? desired.slice(0, dot) : desired;
   const ext = dot >= 0 ? desired.slice(dot) : "";
   for (let n = 2; ; n++) {
     const candidate = `${stem}-${n}${ext}`;
-    if (!existing.has(candidate)) return { name: candidate, reused: false };
+    if (free(candidate)) return { name: candidate, reused: false };
   }
 }
 

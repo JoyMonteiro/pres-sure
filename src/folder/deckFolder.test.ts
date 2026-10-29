@@ -172,3 +172,40 @@ describe("DeckFolder.save", () => {
     expect(await f.save(deck([], "From git"))).toBe("unchanged");
   });
 });
+
+describe("DeckFolder.open resuming after a reload (edits newer than the last folder save)", () => {
+  const setup = async () => {
+    const io = memoryFolder("lec", { [DECK_FILE]: json(deck([], "Saved")) });
+    const first = new DeckFolder(io);
+    await first.open(deck([]), { isDirty: false, confirmReplace: never });
+    return { io, stamp: first.modified };
+  };
+
+  it("keeps the newer in-browser copy when the deck on disk is the one we last wrote", async () => {
+    const { io, stamp } = await setup();
+    const local = deck([], "Edited just before reload");
+    const f = new DeckFolder(io);
+    const r = await f.open(local, { isDirty: false, confirmReplace: never, resumeIfUnchangedSince: stamp });
+    expect(r).toEqual({ kind: "loaded", deck: local });
+    expect(await f.save(local)).toBe("saved");
+    expect(JSON.parse((await io.readText(DECK_FILE))!.text).title).toBe("Edited just before reload");
+  });
+
+  it("loads from disk when the deck changed since our last write (git pull)", async () => {
+    const { io, stamp } = await setup();
+    await io.write(DECK_FILE, json(deck([], "Pulled")));
+    const r = await new DeckFolder(io).open(deck([], "Local"), {
+      isDirty: false,
+      confirmReplace: never,
+      resumeIfUnchangedSince: stamp,
+    });
+    expect(r.kind === "loaded" && r.deck.title).toBe("Pulled");
+  });
+
+  it("loads from disk when the in-browser copy is a different deck", async () => {
+    const { io, stamp } = await setup();
+    const other = { ...deck([], "Other"), id: "p2" };
+    const r = await new DeckFolder(io).open(other, { isDirty: false, confirmReplace: never, resumeIfUnchangedSince: stamp });
+    expect(r.kind === "loaded" && r.deck.title).toBe("Saved");
+  });
+});

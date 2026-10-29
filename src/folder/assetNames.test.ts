@@ -47,6 +47,13 @@ describe("chooseAssetName", () => {
     ]);
     expect(chooseAssetName("a.png", "h3", existing)).toEqual({ name: "a-3.png", reused: false });
   });
+  it("treats names differing only in case as a clash (APFS and NTFS ignore case)", () => {
+    const existing = new Map([
+      ["Keeling.png", "h1"],
+      ["KEELING-2.png", "h2"],
+    ]);
+    expect(chooseAssetName("keeling.png", "h3", existing)).toEqual({ name: "keeling-3.png", reused: false });
+  });
 });
 
 describe("sha256Hex", () => {

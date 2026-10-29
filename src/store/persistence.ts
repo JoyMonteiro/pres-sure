@@ -73,6 +73,7 @@ export async function importJson(file: File): Promise<Presentation> {
 }
 
 const FOLDER_KEY = "folder";
+const FOLDER_STAMP_KEY = "folderStamp";
 
 /** Run one request against the presentations store and resolve with its result. */
 async function idbRequest<T>(mode: IDBTransactionMode, op: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
@@ -97,4 +98,14 @@ export async function saveFolderHandle(handle: FileSystemDirectoryHandle | null)
 export async function loadFolderHandle(): Promise<FileSystemDirectoryHandle | null> {
   const h = await idbRequest<FileSystemDirectoryHandle | undefined>("readonly", (s) => s.get(FOLDER_KEY));
   return h ?? null;
+}
+
+/** When the open folder's deck was last written by us (DeckFolder.modified), for resuming after a reload. */
+export async function saveFolderStamp(modified: number | null): Promise<void> {
+  await idbRequest("readwrite", (s) => s.put(modified, FOLDER_STAMP_KEY));
+}
+
+export async function loadFolderStamp(): Promise<number | null> {
+  const m = await idbRequest<number | null | undefined>("readonly", (s) => s.get(FOLDER_STAMP_KEY));
+  return m ?? null;
 }
