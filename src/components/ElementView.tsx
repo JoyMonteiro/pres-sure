@@ -7,6 +7,8 @@ import { useStore } from "../store/store";
 import { effectiveScale } from "../nodes/editing";
 import { computeSnap } from "../playback/snapping";
 import { STAGGER_STEP_S } from "../playback/stagger";
+import { useAssetSrc } from "../folder/useAssetSrc";
+import { isPlaceholderSrc } from "../folder/assetRegistry";
 
 /** Editable element wrapped in react-rnd (scale-aware drag/resize — §2.2). */
 export function EditableElement({
@@ -123,6 +125,8 @@ export function StaticElement({ el }: { el: Element }) {
 function ElementBody({ el, editable }: { el: Element; editable: boolean }) {
   const update = useStore((s) => s.updateElement);
   const ref = useRef<HTMLDivElement>(null);
+  // Text content is HTML, never an asset path — pass null so it is not looked up.
+  const src = useAssetSrc(el.type === "text" ? null : el.content);
 
   // Initialize contentEditable HTML once (avoid clobbering caret on re-render).
   useEffect(() => {
@@ -156,12 +160,13 @@ function ElementBody({ el, editable }: { el: Element; editable: boolean }) {
   // image / gif / svg are all <img> sources.
   return (
     <img
-      src={el.content}
+      src={src ?? ""}
       alt=""
       draggable={false}
       onLoad={(e) => {
         const img = e.currentTarget;
-        if (!el.naturalW && img.naturalWidth) {
+        // A placeholder's 400×300 must never be recorded as the asset's natural size.
+        if (!el.naturalW && img.naturalWidth && src && !isPlaceholderSrc(src)) {
           update(el.id, { naturalW: img.naturalWidth, naturalH: img.naturalHeight });
         }
       }}
